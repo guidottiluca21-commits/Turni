@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turni – Pianificazione turni di lavoro</title>
+<!--
+  Librerie esterne (solo per l'esportazione PDF; il resto dell'app funziona offline):
+  1) jsPDF 2.5.1  – generazione del file PDF nel browser
+     CDN: https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+  2) jsPDF-AutoTable 3.8.2 – tabelle multipagina con stili per cella (griglia dei turni)
+     CDN: https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js
+  Motivo: producono un vero PDF A4 orizzontale, testuale e selezionabile, senza backend.
+  Se i CDN non sono raggiungibili, "Esporta PDF" ripiega sulla stampa del browser (A4 orizzontale)
+  usando la stessa tabella ("Salva come PDF").
+-->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#fff; --ink:#1f2937; --muted:#6b7280; --line:#e2e8f0; --brand:#2563eb; --brand-ink:#fff;
+  --ok:#15803d; --okbg:#dcfce7; --warn:#b45309; --warnbg:#fef3c7; --err:#b91c1c; --errbg:#fee2e2; --radius:10px;
+  --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+aside{background:#0f172a;color:#cbd5e1;padding:16px 12px;position:sticky;top:0;height:100vh;overflow:auto}
+aside h1{font-size:17px;margin:0 6px 2px;color:#fff;letter-spacing:.3px}
+aside .sub{font-size:11px;margin:0 6px 16px;color:#94a3b8}
+aside nav button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:inherit;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px}
+aside nav button:hover{background:#1e293b}
+aside nav button.on{background:var(--brand);color:#fff}
+aside nav .sec{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin:14px 8px 4px}
+main{padding:18px 22px 60px;min-width:0}
+h2{margin:0 0 4px;font-size:21px}
+.lead{color:var(--muted);margin:0 0 14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:15px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.btn{border:1px solid var(--line);background:#fff;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{background:#f1f5f9}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.primary:hover{background:#1d4ed8}
+.btn.danger{color:var(--err);border-color:#fecaca}
+.btn.danger:hover{background:var(--errbg)}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{border:1px solid #cbd5e1;border-radius:7px;padding:6px 8px;background:#fff;min-width:0}
+input[type=number]{width:90px}
+textarea{width:100%;min-height:70px;resize:vertical}
+label.f{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:12px;color:#374151;margin-bottom:10px}
+label.f input[type=text],label.f select,label.f input[type=date],label.f input[type=time]{font-weight:400;font-size:14px}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-weight:500;font-size:13px;margin:0 12px 6px 0;cursor:pointer}
+.hint{font-weight:400;color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:0 16px}
+table.t{border-collapse:collapse;width:100%}
+table.t th,table.t td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.t th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;background:#f8fafc;position:sticky;top:0}
+.scroll{overflow:auto;max-width:100%}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;background:#e5e7eb}
+.pill.ok{background:var(--okbg);color:var(--ok)} .pill.warn{background:var(--warnbg);color:var(--warn)} .pill.err{background:var(--errbg);color:var(--err)}
+.banner{border-radius:var(--radius);padding:11px 14px;margin-bottom:12px;font-weight:600;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner.ok{background:var(--okbg);color:var(--ok)} .banner.warn{background:var(--warnbg);color:var(--warn)} .banner.err{background:var(--errbg);color:var(--err)} .banner.info{background:#dbeafe;color:#1e40af}
+.banner small{font-weight:500}
+/* griglia settimanale */
+table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:880px;background:#fff}
+table.grid th,table.grid td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 6px;vertical-align:top}
+table.grid thead th{background:#0f172a;color:#fff;font-size:12px;text-align:center;position:sticky;top:0;z-index:2}
+table.grid thead th small{display:block;font-weight:400;opacity:.8}
+table.grid thead th.we{background:#334155}
+table.grid td.svc{font-weight:700;background:#f8fafc;width:92px;border-left:1px solid var(--line)}
+table.grid td.shf{width:104px;font-weight:600;font-size:12px}
+table.grid td.shf small{display:block;font-weight:400;color:#475569}
+table.grid td.cell{cursor:pointer;min-width:104px;height:54px;transition:filter .1s}
+table.grid td.cell:hover{filter:brightness(.95);outline:2px solid var(--brand);outline-offset:-2px}
+table.grid td.off{background:repeating-linear-gradient(45deg,#f8fafc,#f8fafc 6px,#f1f5f9 6px,#f1f5f9 12px);color:#cbd5e1;text-align:center}
+.chip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.85);border:1px solid rgba(15,23,42,.18);border-radius:6px;padding:1px 6px;margin:2px 0;font-size:12.5px;font-weight:600}
+.chip.err{border:2px solid var(--err);background:#fff1f2;color:var(--err)}
+.chip.soft{border:2px dashed #d97706}
+.chip.dim{opacity:.3}
+.chip.hl{outline:2px solid var(--brand)}
+.chip .ic{font-size:11px}
+.unc{display:flex;align-items:center;gap:4px;border:2px dashed var(--err);color:var(--err);background:#fff;border-radius:6px;padding:1px 6px;margin:2px 0;font-size:12px;font-weight:700}
+.badge-un{display:inline-block;margin-top:2px;font-size:11px;background:#f59e0b;color:#111;border-radius:99px;padding:0 6px;font-weight:700}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.2);vertical-align:-2px;margin-right:4px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:10px;flex-wrap:wrap}
+.tabs button{background:none;border:0;padding:8px 12px;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+.tabs button.on{color:var(--brand);border-bottom-color:var(--brand)}
+.issue{display:flex;gap:10px;align-items:flex-start;padding:7px 9px;border-radius:8px;border:1px solid var(--line);margin-bottom:6px;background:#fff}
+.issue.h{border-left:4px solid var(--err)} .issue.s{border-left:4px solid #d97706} .issue.u{border-left:4px solid var(--err);background:#fff7f7}
+.issue .go{margin-left:auto}
+.issue .why{font-size:12.5px;color:#475569;margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:24px;line-height:1.1}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi.err b{color:var(--err)} .kpi.ok b{color:var(--ok)} .kpi.warn b{color:var(--warn)}
+.bar{height:8px;border-radius:5px;background:#e5e7eb;overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%;background:var(--brand)}
+/* modali */
+.ovl{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px;overflow:auto;z-index:50}
+.modal{background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);width:min(560px,100%);display:flex;flex-direction:column;max-height:92vh}
+.modal.wide{width:min(860px,100%)}
+.modal header{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:16px}
+.modal .body{padding:14px 18px;overflow:auto}
+.modal footer{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.toast{background:#111827;color:#fff;border-radius:9px;padding:10px 14px;box-shadow:var(--shadow);max-width:380px;animation:in .2s}
+.toast.ok{background:#166534} .toast.warn{background:#92400e} .toast.err{background:#991b1b}
+@keyframes in{from{transform:translateY(10px);opacity:0}to{opacity:1}}
+.spin{display:inline-block;width:16px;height:16px;border:3px solid #cbd5e1;border-top-color:var(--brand);border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.slotrow{border:1px solid var(--line);border-radius:9px;padding:9px 10px;margin-bottom:9px}
+.msg{font-size:12.5px;margin-top:5px}
+.msg.h{color:var(--err)} .msg.s{color:var(--warn)} .msg.g{color:var(--ok)}
+.matrix td,.matrix th{padding:3px 4px;text-align:center}
+.matrix input{width:52px;text-align:center}
+.help h3{margin-top:18px} .help p,.help li{max-width:900px}
+.help code{background:#eef2ff;padding:1px 5px;border-radius:4px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+#printArea{display:none}
+@media (max-width:900px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;height:auto;display:block;padding:10px}
+  aside nav{display:flex;flex-wrap:wrap;gap:4px} aside nav .sec{display:none} aside nav button{width:auto;padding:6px 10px}
+  main{padding:12px 10px 60px} .grid2,.grid3{grid-template-columns:1fr}
+}
+@page{size:A4 landscape;margin:10mm}
+@media print{
+  body{background:#fff} #app,#toasts,.ovl{display:none!important}
+  #printArea{display:block;font:11px/1.3 Arial,sans-serif;color:#000}
+  #printArea h1{font-size:18px;margin:0} #printArea .pm{margin:2px 0 8px;font-size:12px}
+  #printArea table{border-collapse:collapse;width:100%} #printArea th,#printArea td{border:1px solid #000;padding:3px 4px;vertical-align:top}
+  #printArea th{background:#222;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea td.s0{background:#f2f2f2} #printArea td.s1{background:#dcdcdc} #printArea td.s2{background:#c0c0c0}
+  #printArea td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea .inc{border:2px solid #000;padding:4px 8px;font-weight:bold;margin:6px 0}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts"></div>
+<div id="printArea"></div>
+<script>
+'use strict';
+/* =====================================================================
+   CORE (nessun accesso al DOM): utils, stato, vincoli, validazione,
+   statistiche, generatore e ottimizzatore.
+   ===================================================================== */
+
+const DOW_SHORT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+const DOW_LONG = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+const TIER_NAMES = ['Equità del carico', 'Equità delle notti', 'Equità dei weekend', 'Continuità di servizio', 'Preferenze secondarie'];
+const STORAGE_KEY = 'turni.app.v1';
+
+/* ---------------------------------------------------------------- utils */
+const U = {
+  uid(p) { return (p || 'id') + '_' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4); },
+  pad(n) { return String(n).padStart(2, '0'); },
+  dayNum(iso) { const [y, m, d] = iso.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); },
+  iso(dn) { const d = new Date(dn * 864e5); return d.getUTCFullYear() + '-' + U.pad(d.getUTCMonth() + 1) + '-' + U.pad(d.getUTCDate()); },
+  addDays(iso, n) { return U.iso(U.dayNum(iso) + n); },
+  dow(iso) { return (((U.dayNum(iso) + 3) % 7) + 7) % 7; }, // Lun=0
+  monday(iso) { return U.addDays(iso, -U.dow(iso)); },
+  weekNo(iso) { return Math.floor((U.dayNum(iso) + 3) / 7); },
+  today() { const d = new Date(); return d.getFullYear() + '-' + U.pad(d.getMonth() + 1) + '-' + U.pad(d.getDate()); },
+  hours(t) { const [h, m] = String(t).split(':').map(Number); return h + (m || 0) / 60; },
+  hhmm(x) { x = ((x % 24) + 24) % 24; const h = Math.floor(x + 1e-9), m = Math.round((x - h) * 60); return U.pad(m === 60 ? h + 1 : h) + ':' + U.pad(m === 60 ? 0 : m); },
+  fmtDate(iso) { const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; },
+  fmtShort(iso) { const [, m, d] = iso.split('-'); return d + '/' + m; },
+  r1(x) { return Math.round(x * 10) / 10; },
+  deepCopy(o) { return JSON.parse(JSON.stringify(o)); },
+};
+function shiftDuration(t) { let d = U.hours(t.end) - U.hours(t.start); if (d <= 1e-9) d += 24; return d; }
+function cellKey(svc, date, shift) { return svc + '|' + date + '|' + shift; }
+function personName(p) { return p ? (p.display || ((p.first || '') + ' ' + (p.last || '')).trim() || '?') : '(persona eliminata)'; }
+
+function rng32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ------------------------------------------------------------ defaults */
+function defaultSettings() {
+  return {
+    weekendDays: [5, 6],            // definizione di weekend (0=Lun ... 6=Dom)
+    minRestHours: 11,               // HARD: riposo minimo tra due turni
+    nightRestHours: 24,             // HARD: ore minime dopo la fine di una notte (smonto + riposo)
+    nightRestFullDays: 0,           // HARD: giorni solari completi liberi dopo il giorno di fine notte
+    unavailSpill: false,            // un'indisponibilità di giornata intera copre anche la parte di notte oltre mezzanotte
+    maxConsecutiveDays: 6, maxConsecutiveDaysHard: true,
+    maxHoursWeek: 0,                // HARD (0 = disattivato)
+    maxNightsWeek: 3, maxNightsWeekHard: false,
+    maxConsecutiveNights: 3,        // SOFT (0 = disattivato)
+    softConsecutiveDays: 5,         // SOFT (0 = disattivato)
+    weekendBonus: 1,                // punti aggiuntivi per turno nel weekend
+    weekendWindowWeeks: 4,          // finestra per "almeno un weekend libero"
+    maxConsecutiveWeekends: 2,
+    fairnessTolerance: 1,           // scostamento dalla media tollerato senza penalità
+    fairnessHistoryWeeks: 4,        // settimane precedenti incluse nel calcolo dell'equità
+    w: {
+      fairTotal: 10, fairType: 4, fairNight: 12, fairWeekend: 10, weekendConsec: 8, noFreeWeekend: 15,
+      continuity: 6, dayToNight: 8, dayToNightHours: 12, consecDays: 5, consecNights: 5, nightsOverMax: 6,
+    },
+    optimizer: { restarts: 4, iterations: 6000, timeMs: 6000, seed: 1 },
+  };
+}
+function mkReq(a) { return a.slice(); }
+function defaultState() {
+  return {
+    version: 1,
+    meta: { name: 'Programmazione turni' },
+    shiftTypes: [
+      { id: 'mat', name: 'Mattina', start: '06:00', end: '14:00', night: false, points: 1, color: '#fde68a' },
+      { id: 'pom', name: 'Pomeriggio', start: '14:00', end: '22:00', night: false, points: 1, color: '#bfdbfe' },
+      { id: 'not', name: 'Notte', start: '22:00', end: '06:00', night: true, points: 2, color: '#c7d2fe' },
+    ],
+    services: [
+      { id: 'svc_salaA', name: 'Sala A', active: true, continuity: false, req: { mat: mkReq([2, 2, 2, 2, 2, 1, 1]), pom: mkReq([1, 1, 1, 1, 1, 1, 1]), not: mkReq([0, 0, 0, 0, 0, 0, 0]) } },
+      { id: 'svc_salaB', name: 'Sala B', active: true, continuity: false, req: { mat: mkReq([1, 1, 1, 1, 1, 0, 0]), pom: mkReq([1, 1, 1, 1, 1, 0, 0]), not: mkReq([0, 0, 0, 0, 0, 0, 0]) } },
+      { id: 'svc_uti', name: 'UTI', active: true, continuity: true, req: { mat: mkReq([1, 1, 1, 1, 1, 1, 1]), pom: mkReq([1, 1, 1, 1, 1, 1, 1]), not: mkReq([1, 1, 1, 1, 1, 1, 1]) } },
+    ],
+    people: [],
+    unavail: [],
+    weeks: {},
+    settings: defaultSettings(),
+    ui: { view: 'schedule', ws: U.monday(U.today()) },
+  };
+}
+function emptyWeek() { return { assignments: [], overrides: {}, extra: [], notes: '', lastGen: null }; }
+function ensureWeek(S, ws) { if (!S.weeks[ws]) S.weeks[ws] = emptyWeek(); return S.weeks[ws]; }
+
+function mergeDeep(base, over) {
+  if (over == null || typeof over !== 'object' || Array.isArray(over)) return base;
+  const out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
+  for (const k of Object.keys(over)) {
+    if (base && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) out[k] = mergeDeep(base[k], over[k]);
+    else out[k] = over[k];
+  }
+  return out;
+}
+/* Normalizza uno stato caricato (localStorage / import JSON): completa i campi mancanti. */
+function normalizeState(raw) {
+  const D = defaultState();
+  const S = Object.assign({}, D, raw || {});
+  S.meta = Object.assign({}, D.meta, S.meta || {});
+  S.settings = mergeDeep(D.settings, (raw && raw.settings) || {});
+  S.shiftTypes = Array.isArray(S.shiftTypes) ? S.shiftTypes : D.shiftTypes;
+  S.shiftTypes.forEach(t => { t.points = +t.points || 0; t.night = !!t.night; t.color = t.color || '#e5e7eb'; });
+  S.services = (Array.isArray(S.services) ? S.services : []).map(sv => {
+    sv.req = sv.req || {};
+    S.shiftTypes.forEach(t => { const r = Array.isArray(sv.req[t.id]) ? sv.req[t.id] : []; sv.req[t.id] = Array.from({ length: 7 }, (_, i) => Math.max(0, parseInt(r[i], 10) || 0)); });
+    sv.active = sv.active !== false; sv.continuity = !!sv.continuity; return sv;
+  });
+  S.people = (Array.isArray(S.people) ? S.people : []).map(p => { p.services = Array.isArray(p.services) ? p.services : []; p.active = p.active !== false; p.night = !!p.night; return p; });
+  S.unavail = Array.isArray(S.unavail) ? S.unavail : [];
+  S.weeks = S.weeks && typeof S.weeks === 'object' ? S.weeks : {};
+  for (const k of Object.keys(S.weeks)) S.weeks[k] = Object.assign(emptyWeek(), S.weeks[k]);
+  S.ui = Object.assign({}, D.ui, S.ui || {});
+  S.ui.ws = U.monday(S.ui.ws || U.today());
+  return S;
+}
+
+/* ---------------------------------------------------- servizi/settimane */
+function weekServices(S, ws) {
+  const w = S.weeks[ws]; const out = [];
+  for (const sv of S.services) {
+    const o = (w && w.overrides && w.overrides[sv.id]) || null;
+    const active = o && typeof o.active === 'boolean' ? o.active : sv.active;
+    if (!active) continue;
+    out.push({ id: sv.id, name: sv.name, cont: !!sv.continuity, req: (o && o.req) || sv.req, staffIds: null, temp: false, custom: !!(o && o.req) });
+  }
+  for (const x of (w && w.extra) || []) out.push({ id: x.id, name: x.name, cont: !!x.continuity, req: x.req || {}, staffIds: x.staff || null, temp: true, custom: false });
+  return out;
+}
+function demandCells(S, ws) {
+  const cells = [];
+  for (const sv of weekServices(S, ws)) for (const t of S.shiftTypes) {
+    const row = sv.req[t.id] || [];
+    for (let d = 0; d < 7; d++) {
+      const n = parseInt(row[d], 10) || 0;
+      if (n > 0) { const date = U.addDays(ws, d); cells.push({ key: cellKey(sv.id, date, t.id), svc: sv.id, svcName: sv.name, cont: sv.cont, staffIds: sv.staffIds, date, dow: d, day: U.dayNum(date), shift: t.id, req: n }); }
+    }
+  }
+  return cells;
+}
+
+/* ------------------------------------------------------- ambiente/items */
+function windowWeeks(S, ws) {
+  const st = S.settings, cw = U.weekNo(ws);
+  const before = Math.min(12, Math.max(2, st.fairnessHistoryWeeks, st.weekendWindowWeeks, st.maxConsecutiveWeekends + 1)), after = 2;
+  return Object.keys(S.weeks).filter(k => { const wn = U.weekNo(k); return k !== ws && wn >= cw - before && wn <= cw + after; });
+}
+function makeEnv(S, ws) {
+  const st = S.settings;
+  const env = { S, st, ws, curWk: U.weekNo(ws), d0: U.dayNum(ws), sm: {}, tIdx: {}, sTypes: S.shiftTypes, nt: S.shiftTypes.length, svcCache: {}, cellKeys: new Set(), sched: new Set([U.weekNo(ws)]) };
+  S.shiftTypes.forEach((t, i) => { env.sm[t.id] = t; env.tIdx[t.id] = i; });
+  env.wkend = new Set(st.weekendDays);
+  env.inWeekDay = d => d >= env.d0 && d <= env.d0 + 6;
+  env.svcInfo = (wk, id) => {
+    const key = wk + '|' + id; if (env.svcCache[key]) return env.svcCache[key];
+    let info = null; const w = S.weeks[wk];
+    const ex = w && (w.extra || []).find(x => x.id === id);
+    if (ex) info = { name: ex.name, cont: !!ex.continuity, staffIds: ex.staff || null, exists: true };
+    else { const sv = S.services.find(x => x.id === id); info = sv ? { name: sv.name, cont: !!sv.continuity, staffIds: null, exists: true } : { name: '(servizio rimosso)', cont: false, staffIds: null, exists: false }; }
+    return (env.svcCache[key] = info);
+  };
+  for (const k of Object.keys(S.weeks)) {
+    if (k === ws) continue;
+    const w = S.weeks[k];
+    if (w.assignments.length) env.sched.add(U.weekNo(k));
+    for (const a of w.assignments) env.cellKeys.add(a.svc + '|' + a.shift + '|' + U.dayNum(a.date));
+  }
+  env.setCells = cells => { cells.forEach(c => env.cellKeys.add(c.svc + '|' + c.shift + '|' + c.day)); };
+  env.cellExists = (svc, shift, day) => env.cellKeys.has(svc + '|' + shift + '|' + day);
+  return env;
+}
+function makeItem(env, date, shiftId, m) {
+  const t = env.sm[shiftId]; if (!t) return null;
+  const day = U.dayNum(date), dow = ((day + 3) % 7 + 7) % 7;
+  const start = day * 24 + U.hours(t.start);
+  return Object.assign({ date, shift: shiftId, shiftName: t.name, night: !!t.night, points: t.points, start, end: start + shiftDuration(t), day, dow, wk: Math.floor((day + 3) / 7), weekend: env.wkend.has(dow), ck: cellKey(m.svc, date, shiftId) }, m);
+}
+function itemFromAssignment(env, a, wk) {
+  const info = env.svcInfo(wk, a.svc);
+  return makeItem(env, a.date, a.shift, { k: 'a' + a.id, aid: a.id, svc: a.svc, svcName: info.name, cont: info.cont, person: a.person, locked: !!a.locked, inW: wk === env.ws });
+}
+function lbl(it) { return `${it.svcName} ${DOW_SHORT[it.dow]} ${U.fmtShort(it.date)} ${it.shiftName}`; }
+
+/* ---------------------------------------- vincoli statici (per persona) */
+function unavailEntry(env, pid, date, shiftId) {
+  const S = env.S, t = env.sm[shiftId];
+  const spill = env.st.unavailSpill && t && U.hours(t.end) <= U.hours(t.start) ? U.addDays(date, 1) : null;
+  for (const e of S.unavail) {
+    if (e.person !== pid) continue;
+    if (date >= e.from && date <= e.to && (!e.shifts || !e.shifts.length || e.shifts.includes(shiftId))) return e;
+    if (spill && spill >= e.from && spill <= e.to && (!e.shifts || !e.shifts.length)) return e;
+  }
+  return null;
+}
+function staticReason(env, person, svcId, staffIds, date, shiftId) {
+  if (!person) return { type: 'PERSONA', msg: 'Persona non più presente in anagrafica' };
+  if (person.active === false) return { type: 'INATTIVO', msg: 'Persona non attiva' };
+  const ok = staffIds ? staffIds.includes(person.id) : person.services.includes(svcId);
+  if (!ok) return { type: 'NONABIL', msg: 'Non abilitata al servizio' };
+  const t = env.sm[shiftId];
+  if (t && t.night && !person.night) return { type: 'NOTTE', msg: 'Non abilitata ai turni di notte' };
+  const e = unavailEntry(env, person.id, date, shiftId);
+  if (e) return { type: 'INDISP', msg: 'Indisponibile' + (e.note ? ' (' + e.note + ')' : '') };
+  return null;
+}
+
+/* ------------------------------------------------------------------
+   analyzePerson: UNICO punto in cui sono definiti i vincoli temporali
+   HARD e le penalità SOFT di una persona. Usato da generatore,
+   validatore, anteprima della modifica manuale e diagnosi.
+   Restituisce { hard: n, tiers:[5], hl:[...], sl:[...] } (liste solo se verbose).
+   Si contano solo le violazioni che coinvolgono almeno un'assegnazione
+   della settimana in esame (inW).
+   ------------------------------------------------------------------ */
+function analyzePerson(env, items, verbose) {
+  const st = env.st, w = st.w;
+  const out = { hard: 0, tiers: [0, 0, 0, 0, 0], hl: verbose ? [] : null, sl: verbose ? [] : null };
+  const n = items.length; if (!n) return out;
+  const L = n > 1 ? items.slice().sort((a, b) => a.start - b.start || a.end - b.end) : items;
+  const H = (type, refs, msg, scope) => { scope = scope || refs; if (!scope.some(r => r.inW)) return; out.hard++; if (verbose) out.hl.push({ type, refs, scope, msg: msg() }); };
+  const Sf = (tier, pen, type, refs, msg, force) => { if (!force && !refs.some(r => r.inW)) return; out.tiers[tier] += pen; if (verbose) out.sl.push({ type, tier, pen, refs, msg: msg() }); };
+  const hz = Math.max(st.minRestHours, st.nightRestHours, 24 * (st.nightRestFullDays + 2), w.dayToNightHours) + 1;
+
+  // 1) coppie: sovrapposizione, riposo minimo, riposo post-notte, Pomeriggio→Notte
+  for (let i = 0; i < n; i++) {
+    const a = L[i];
+    for (let j = i + 1; j < n; j++) {
+      const b = L[j];
+      if (b.start >= a.end + hz) break;
+      if (!a.inW && !b.inW) continue;
+      if (b.start < a.end - 1e-9) { H('DOPPIA', [a, b], () => `Assegnazioni sovrapposte: ${lbl(a)} e ${lbl(b)}`); continue; }
+      const gap = b.start - a.end;
+      if (a.night) {
+        const need = Math.max(st.minRestHours, st.nightRestHours);
+        let viol = gap < need - 1e-9;
+        if (!viol && st.nightRestFullDays > 0) { const ed = Math.floor((a.end - 1e-6) / 24); viol = b.start < (ed + 1 + st.nightRestFullDays) * 24 - 1e-9; }
+        if (viol) H('POSTNOTTE', [a, b], () => `Riposo post-notte insufficiente: ${lbl(a)} → ${lbl(b)} (${U.r1(gap)} h di intervallo)`);
+      } else if (gap < st.minRestHours - 1e-9) {
+        H('RIPOSO', [a, b], () => `Riposo minimo violato: ${lbl(a)} → ${lbl(b)} (${U.r1(gap)} h < ${st.minRestHours} h)`);
+      }
+      if (!a.night && b.night && w.dayToNightHours > 0 && gap < w.dayToNightHours)
+        Sf(4, w.dayToNight * (1 + (w.dayToNightHours - gap) / w.dayToNightHours), 'DAYNIGHT', [a, b], () => `Turno diurno seguito da notte a breve distanza: ${lbl(a)} → ${lbl(b)} (${U.r1(gap)} h)`);
+    }
+  }
+
+  // 2) giorni consecutivi / notti consecutive
+  let run = 0, prev = null, runItems = [], nrun = 0, nprev = null, nItems = [];
+  for (let i = 0; i < n;) {
+    const d = L[i].day; const todays = [];
+    while (i < n && L[i].day === d) todays.push(L[i++]);
+    if (prev !== null && d === prev + 1) run++; else { run = 1; runItems = []; }
+    prev = d; runItems = runItems.concat(todays);
+    if (st.maxConsecutiveDays > 0 && run > st.maxConsecutiveDays) {
+      if (st.maxConsecutiveDaysHard) H('GIORNI', todays, () => `Più di ${st.maxConsecutiveDays} giorni consecutivi lavorati (${run}° giorno: ${U.fmtShort(todays[0].date)})`, runItems);
+      else Sf(4, w.consecDays * 2, 'GIORNI', runItems, () => `Più di ${st.maxConsecutiveDays} giorni consecutivi (${run}° giorno: ${U.fmtShort(todays[0].date)})`);
+    }
+    if (st.softConsecutiveDays > 0 && run > st.softConsecutiveDays && !(st.maxConsecutiveDays > 0 && run > st.maxConsecutiveDays))
+      Sf(4, w.consecDays, 'GIORNI_SOFT', runItems, () => `${run} giorni consecutivi lavorati (preferenza max ${st.softConsecutiveDays}), ${U.fmtShort(todays[0].date)}`);
+    const nn = todays.filter(x => x.night);
+    if (nn.length) {
+      if (nprev !== null && d === nprev + 1) nrun++; else { nrun = 1; nItems = []; }
+      nprev = d; nItems = nItems.concat(nn);
+      if (st.maxConsecutiveNights > 0 && nrun > st.maxConsecutiveNights) Sf(4, w.consecNights, 'NOTTI_CONSEC', nItems, () => `${nrun} notti consecutive (preferenza max ${st.maxConsecutiveNights})`);
+    }
+  }
+
+  // 3) limiti settimanali: ore e notti
+  const byWk = new Map();
+  for (const x of L) { let a = byWk.get(x.wk); if (!a) byWk.set(x.wk, a = []); a.push(x); }
+  for (const [, arr] of byWk) {
+    if (!arr.some(r => r.inW)) continue;
+    if (st.maxHoursWeek > 0) {
+      let hsum = 0;
+      for (const x of arr) { hsum += x.end - x.start; if (hsum > st.maxHoursWeek + 1e-9) H('ORE', [x], () => `Superato il massimo di ${st.maxHoursWeek} ore settimanali (${U.r1(hsum)} h): ${lbl(x)}`, arr); }
+    }
+    if (st.maxNightsWeek > 0) {
+      let nc = 0;
+      for (const x of arr) if (x.night) { nc++; if (nc > st.maxNightsWeek) { if (st.maxNightsWeekHard) H('NOTTI', [x], () => `Più di ${st.maxNightsWeek} notti nella settimana: ${lbl(x)}`, arr); else Sf(1, w.nightsOverMax, 'NOTTI', arr, () => `Più di ${st.maxNightsWeek} notti nella settimana (${nc}): ${lbl(x)}`); } }
+    }
+  }
+
+  // 4) continuità sui servizi marcati (stessa persona sullo stesso servizio/turno nei giorni consecutivi)
+  if (w.continuity > 0) {
+    for (const x of L) {
+      if (!x.cont) continue;
+      if (!(x.inW || env.inWeekDay(x.day - 1))) continue;
+      if (!env.cellExists(x.svc, x.shift, x.day - 1)) continue;
+      if (!L.some(y => y.svc === x.svc && y.shift === x.shift && y.day === x.day - 1))
+        Sf(3, w.continuity, 'CONTINUITA', [x], () => `Continuità interrotta su ${x.svcName} ${x.shiftName} il ${DOW_SHORT[x.dow]} ${U.fmtShort(x.date)}: la persona non era in servizio il giorno prima`, true);
+    }
+  }
+
+  // 5) weekend: weekend consecutivi, almeno un weekend libero nella finestra
+  const weekendWks = new Set(); let curWE = [];
+  for (const x of L) if (x.weekend) { weekendWks.add(x.wk); if (x.inW) curWE.push(x); }
+  if (curWE.length) {
+    const cw = env.curWk;
+    let a = cw, b = cw; while (weekendWks.has(a - 1) && env.sched.has(a - 1)) a--; while (weekendWks.has(b + 1) && env.sched.has(b + 1)) b++;
+    const rl = b - a + 1;
+    if (st.maxConsecutiveWeekends > 0 && rl > st.maxConsecutiveWeekends)
+      Sf(2, w.weekendConsec * (rl - st.maxConsecutiveWeekends), 'WE_CONSEC', curWE, () => `${rl} weekend consecutivi lavorati (preferenza max ${st.maxConsecutiveWeekends})`, true);
+    let tot = 0, worked = 0;
+    for (let k = 0; k < st.weekendWindowWeeks; k++) { const wk = cw - k; if (env.sched.has(wk)) { tot++; if (weekendWks.has(wk)) worked++; } }
+    if (tot >= 2 && worked === tot) Sf(2, w.noFreeWeekend, 'WE_NOFREE', curWE, () => `Nessun weekend libero nelle ultime ${tot} settimane programmate`, true);
+  }
+  return out;
+}
+
+/* --------------------------------------------------------------- equità */
+function loadVec(env, items) {
+  const st = env.st, v = new Array(3 + env.nt).fill(0);
+  for (const it of items) {
+    v[0] += it.points + (it.weekend ? st.weekendBonus : 0);
+    if (it.night) v[1]++;
+    if (it.weekend) v[2]++;
+    v[3 + env.tIdx[it.shift]]++;
+  }
+  return v;
+}
+function addVec(a, b) { return a.map((x, i) => x + b[i]); }
+function fairnessCalc(env, vecs, wantDevs) {
+  const st = env.st, w = st.w, n = vecs.length, nc = 3 + env.nt;
+  const mean = new Array(nc).fill(0), tiers = [0, 0, 0], devs = wantDevs ? [] : null;
+  if (!n) return { tiers, mean, devs: devs || [] };
+  for (const v of vecs) for (let c = 0; c < nc; c++) mean[c] += v[c];
+  for (let c = 0; c < nc; c++) mean[c] /= n;
+  const tol = st.fairnessTolerance;
+  for (const v of vecs) {
+    const d = new Array(nc);
+    for (let c = 0; c < nc; c++) d[c] = Math.max(0, Math.abs(v[c] - mean[c]) - tol);
+    tiers[0] += w.fairTotal * d[0] * d[0]; tiers[1] += w.fairNight * d[1] * d[1]; tiers[2] += w.fairWeekend * d[2] * d[2];
+    for (let t = 0; t < env.nt; t++) if (!env.sTypes[t].night) tiers[0] += w.fairType * d[3 + t] * d[3 + t];
+    if (devs) devs.push(d);
+  }
+  return { tiers, mean, devs: devs || [] };
+}
+function historyLoads(env) {
+  const S = env.S, cw = env.curWk, hist = {};
+  for (const wk of Object.keys(S.weeks)) {
+    const wn = U.weekNo(wk);
+    if (wk === env.ws || wn >= cw || wn < cw - env.st.fairnessHistoryWeeks) continue;
+    for (const a of S.weeks[wk].assignments) { const it = itemFromAssignment(env, a, wk); if (!it) continue; (hist[a.person] || (hist[a.person] = [])).push(it); }
+  }
+  const res = {}; for (const pid of Object.keys(hist)) res[pid] = loadVec(env, hist[pid]);
+  return res;
+}
+function eligiblePeople(env, cells) {
+  return env.S.people.filter(p => p.active !== false && cells.some(c => !staticReason(env, p, c.svc, c.staffIds, c.date, c.shift)));
+}
+
+/* ----------------------------------------------- diagnosi turni scoperti */
+function explainCell(env, cell, personItems, assignedIds) {
+  const cand = [], excl = [];
+  for (const p of env.S.people) {
+    if (assignedIds.includes(p.id)) continue;
+    const sr = staticReason(env, p, cell.svc, cell.staffIds, cell.date, cell.shift);
+    if (sr) { excl.push({ person: p, reason: sr.msg, type: sr.type }); continue; }
+    const it = makeItem(env, cell.date, cell.shift, { k: 'new', svc: cell.svc, svcName: cell.svcName, cont: cell.cont, inW: true, person: p.id });
+    const r = analyzePerson(env, (personItems.get(p.id) || []).concat(it), true);
+    const bad = r.hl.find(x => x.refs.includes(it) || x.scope.includes(it));
+    if (bad) excl.push({ person: p, reason: bad.msg, type: bad.type }); else cand.push(p);
+  }
+  return { cand, excl };
+}
+
+/* ======================= validateSchedule: funzione centrale ============== */
+function validateSchedule(S, ws) {
+  const st = S.settings, week = S.weeks[ws] || emptyWeek();
+  const env = makeEnv(S, ws), cells = demandCells(S, ws); env.setCells(cells);
+  const cellMap = new Map(cells.map(c => [c.key, c]));
+  const pMap = new Map(S.people.map(p => [p.id, p]));
+  const res = { ws, hard: [], soft: [], uncovered: [], byAssign: {}, byCell: {}, uncoveredMap: {}, stats: [], required: 0, covered: 0, score: null, complete: true, hasAssignments: week.assignments.length > 0 };
+  const add = (level, iss) => {
+    iss.level = level; iss.id = level + res[level].length; res[level].push(iss);
+    for (const a of iss.aids || []) (res.byAssign[a] || (res.byAssign[a] = { hard: [], soft: [] }))[level].push(iss);
+    for (const c of iss.cells || []) (res.byCell[c] || (res.byCell[c] = { hard: [], soft: [] }))[level].push(iss);
+  };
+
+  // assegnazioni della settimana: controlli statici
+  const counts = {};
+  for (const a of week.assignments) {
+    const ck = cellKey(a.svc, a.date, a.shift), cell = cellMap.get(ck), p = pMap.get(a.person);
+    const info = env.svcInfo(ws, a.svc), t = env.sm[a.shift];
+    const where = `${info.name} ${DOW_SHORT[U.dow(a.date)]} ${U.fmtShort(a.date)} ${t ? t.name : '?'}`;
+    counts[ck] = (counts[ck] || 0) + 1;
+    const base = { aids: [a.id], cells: [ck], person: a.person };
+    if (!cell) { add('hard', Object.assign({ type: 'NONPREVISTO', msg: `${personName(p)}: assegnazione non prevista dalla configurazione della settimana (${where})` }, base)); continue; }
+    if (counts[ck] > cell.req) add('hard', Object.assign({ type: 'ECCEDENZA', msg: `${where}: assegnazione in eccesso (richieste ${cell.req})` }, base));
+    const sr = staticReason(env, p, a.svc, info.staffIds, a.date, a.shift);
+    if (sr) add('hard', Object.assign({ type: sr.type, msg: `${personName(p)} – ${where}: ${sr.msg}` }, base));
+  }
+
+  // analisi per persona (con finestra di contesto)
+  const personItems = new Map();
+  const push = (a, wk) => { const it = itemFromAssignment(env, a, wk); if (!it) return; if (!personItems.has(a.person)) personItems.set(a.person, []); personItems.get(a.person).push(it); };
+  for (const wk of windowWeeks(S, ws)) S.weeks[wk].assignments.forEach(a => push(a, wk));
+  week.assignments.forEach(a => push(a, ws));
+  const tiers = [0, 0, 0, 0, 0];
+  for (const [pid, items] of personItems) {
+    if (!items.some(i => i.inW)) continue;
+    const p = pMap.get(pid), r = analyzePerson(env, items, true);
+    for (let k = 0; k < 5; k++) tiers[k] += r.tiers[k];
+    const refsInfo = refs => { const w = refs.filter(x => x.inW); return { aids: w.map(x => x.aid), cells: [...new Set(w.map(x => x.ck))] }; };
+    for (const h of r.hl) { const ri = refsInfo(h.refs.some(x => x.inW) ? h.refs : h.scope); add('hard', { type: h.type, msg: `${personName(p)}: ${h.msg}`, aids: ri.aids, cells: ri.cells, person: pid }); }
+    for (const s of r.sl) { const ri = refsInfo(s.refs); add('soft', { type: s.type, tier: s.tier, pen: s.pen, msg: `${personName(p)}: ${s.msg}`, aids: ri.aids, cells: ri.cells, person: pid }); }
+  }
+
+  // copertura
+  for (const c of cells) {
+    res.required += c.req;
+    const ass = week.assignments.filter(a => a.svc === c.svc && a.date === c.date && a.shift === c.shift);
+    const got = Math.min(c.req, ass.length); res.covered += got;
+    if (got < c.req) {
+      const ex = explainCell(env, c, personItems, ass.map(a => a.person));
+      const t = env.sm[c.shift], missing = c.req - got;
+      let msg;
+      if (!ex.cand.length) msg = got > 0 ? `${c.req} persone richieste, ${got} ${got === 1 ? 'assegnata' : 'assegnate'}: nessun'altra persona compatibile disponibile.` : `Nessuna persona disponibile compatibile (${missing} ${missing === 1 ? 'turno mancante' : 'turni mancanti'}).`;
+      else if (ex.cand.length < missing) msg = `${c.req} persone richieste, ${got} assegnate: ${ex.cand.length === 1 ? 'solo 1 persona compatibile disponibile' : 'solo ' + ex.cand.length + ' persone compatibili disponibili'}.`;
+      else msg = `${missing} ${missing === 1 ? 'posto scoperto' : 'posti scoperti'}: ${ex.cand.length} ${ex.cand.length === 1 ? 'persona compatibile disponibile' : 'persone compatibili disponibili'} (assegna manualmente o rigenera).`;
+      const groups = {};
+      ex.excl.forEach(e => { const k = e.type === 'PERSONA' ? e.type : e.reason; (groups[k] || (groups[k] = { reason: e.reason, type: e.type, people: [] })).people.push(personName(e.person)); });
+      const u = { cell: c, key: c.key, title: `${c.svcName} – ${DOW_LONG[c.dow]} ${U.fmtShort(c.date)} – ${t.name}`, missing, required: c.req, assigned: got, msg, candidates: ex.cand.map(personName), excluded: Object.values(groups).sort((a, b) => b.people.length - a.people.length) };
+      res.uncovered.push(u); res.uncoveredMap[c.key] = u;
+    }
+  }
+
+  // statistiche + equità
+  const elig = eligiblePeople(env, cells), hist = historyLoads(env);
+  const zero = new Array(3 + env.nt).fill(0);
+  const vecOf = pid => addVec(hist[pid] || zero, loadVec(env, (personItems.get(pid) || []).filter(i => i.inW)));
+  const fc = fairnessCalc(env, elig.map(p => vecOf(p.id)), true);
+  tiers[0] += fc.tiers[0]; tiers[1] += fc.tiers[1]; tiers[2] += fc.tiers[2];
+  const eligIdx = new Map(elig.map((p, i) => [p.id, i]));
+  const stats = [];
+  for (const p of S.people) {
+    const items = (personItems.get(p.id) || []);
+    const mine = items.filter(i => i.inW);
+    if (p.active === false && !mine.length) continue;
+    const v = loadVec(env, mine);
+    const days = [...new Set(items.map(i => i.day))].sort((a, b) => a - b);
+    let best = 0;
+    // massimo giorni consecutivi che toccano la settimana
+    let runStart = 0;
+    for (let i = 0; i < days.length; i++) {
+      if (i > 0 && days[i] !== days[i - 1] + 1) runStart = i;
+      let j = i; while (j + 1 < days.length && days[j + 1] === days[j] + 1) j++;
+      if (i === runStart) { const touches = days.slice(i, j + 1).some(d => env.inWeekDay(d)); if (touches) best = Math.max(best, j - i + 1); }
+    }
+    const idx = eligIdx.get(p.id);
+    stats.push({ person: p, shifts: mine.length, points: v[0], nights: v[1], weekend: v[2], byType: S.shiftTypes.map((t, i) => v[3 + i]), hours: mine.reduce((s, i) => s + i.end - i.start, 0), maxConsec: best, eligible: idx !== undefined, delta: idx !== undefined ? vecOf(p.id)[0] - fc.mean[0] : null, dev: idx !== undefined ? fc.devs[idx] : null });
+  }
+  res.stats = stats; res.fairMean = fc.mean;
+  for (const s of stats) {
+    if (!s.dev) continue;
+    const fv = vecOf(s.person.id);
+    const push = (tier, txt) => add('soft', { type: 'EQUITA', tier, msg: `${personName(s.person)}: ${txt}`, aids: [], cells: [], person: s.person.id, pen: 0 });
+    if (s.dev[0] > 1e-9 || s.dev.slice(3).some((d, i) => d > 1e-9 && !env.sTypes[i].night)) push(0, `carico non equilibrato: ${U.r1(fv[0])} punti${st.fairnessHistoryWeeks ? ' (incl. storico)' : ''} contro media ${U.r1(fc.mean[0])}`);
+    if (s.dev[1] > 1e-9) push(1, `notti non equilibrate: ${fv[1]} contro media ${U.r1(fc.mean[1])}`);
+    if (s.dev[2] > 1e-9) push(2, `weekend non equilibrati: ${fv[2]} turni weekend contro media ${U.r1(fc.mean[2])}`);
+  }
+  res.hardCount = res.hard.length; res.softCount = res.soft.length; res.uncoveredCount = res.required - res.covered;
+  res.complete = res.uncoveredCount === 0;
+  res.score = { tiers, total: tiers.reduce((a, b) => a + b, 0) };
+  return res;
+}
+
+/* Anteprima di un'assegnazione manuale: problemi che coinvolgono la nuova assegnazione. */
+function previewAssignment(S, ws, cell, personId, otherPersonIds) {
+  const env = makeEnv(S, ws), cells = demandCells(S, ws); env.setCells(cells);
+  const p = S.people.find(x => x.id === personId);
+  const out = { hard: [], soft: [], hardTypes: [] };
+  const sr = staticReason(env, p, cell.svc, cell.staffIds, cell.date, cell.shift);
+  if (sr) { out.hard.push(sr.msg); out.hardTypes.push(sr.type); }
+  const items = [];
+  for (const wk of windowWeeks(S, ws).concat([ws])) for (const a of S.weeks[wk].assignments) {
+    if (a.person !== personId) continue;
+    if (wk === ws && a.svc === cell.svc && a.date === cell.date && a.shift === cell.shift) continue;
+    const it = itemFromAssignment(env, a, wk); if (it) items.push(it);
+  }
+  (otherPersonIds || []).forEach((pid, i) => { if (pid === personId) items.push(makeItem(env, cell.date, cell.shift, { k: 'o' + i, svc: cell.svc, svcName: cell.svcName, cont: cell.cont, inW: true, person: pid })); });
+  const me = makeItem(env, cell.date, cell.shift, { k: 'me', svc: cell.svc, svcName: cell.svcName, cont: cell.cont, inW: true, person: personId });
+  items.push(me);
+  const r = analyzePerson(env, items, true);
+  r.hl.filter(x => x.refs.includes(me) || x.scope.includes(me)).forEach(x => { out.hard.push(x.msg); out.hardTypes.push(x.type); });
+  r.sl.filter(x => x.refs.includes(me)).forEach(x => out.soft.push(x.msg));
+  return out;
+}
+
+/* ============================ GENERATORE + OTTIMIZZATORE =================== */
+function cmpTuple(a, b) { for (let k = 0; k < a.length; k++) { if (a[k] < b[k] - 1e-9) return -1; if (a[k] > b[k] + 1e-9) return 1; } return 0; }
+
+/* Modello: costruzione heuristica con ordine MRV + riparazione per catene di
+   riassegnazione + ricerca locale lessicografica (priorità rigide). */
+function generateSchedule(S, ws, opts) {
+  opts = opts || {};
+  const st = S.settings, oc = st.optimizer, t0 = Date.now();
+  const env = makeEnv(S, ws), cells = demandCells(S, ws); env.setCells(cells);
+  const week = ensureWeek(S, ws);
+  const people = S.people.filter(p => p.active !== false), P = people.length;
+  const pIdx = new Map(people.map((p, i) => [p.id, i]));
+  const fixed = people.map(() => []);
+  for (const wk of windowWeeks(S, ws)) for (const a of S.weeks[wk].assignments) { const i = pIdx.get(a.person); if (i === undefined) continue; const it = itemFromAssignment(env, a, wk); if (it) fixed[i].push(it); }
+  const lockedAssign = week.assignments.filter(a => a.locked && S.shiftTypes.some(t => t.id === a.shift));
+  const lockedCount = {};
+  for (const a of lockedAssign) {
+    lockedCount[cellKey(a.svc, a.date, a.shift)] = (lockedCount[cellKey(a.svc, a.date, a.shift)] || 0) + 1;
+    const i = pIdx.get(a.person); if (i === undefined) continue; const it = itemFromAssignment(env, a, ws); if (it) fixed[i].push(it);
+  }
+  const slots = [];
+  for (const c of cells) {
+    const rem = c.req - (lockedCount[c.key] || 0);
+    for (let k = 0; k < rem; k++) { const idx = slots.length; slots.push({ i: idx, cell: c, item: makeItem(env, c.date, c.shift, { k: 's' + idx, svc: c.svc, svcName: c.svcName, cont: c.cont, inW: true }) }); }
+  }
+  const NS = slots.length;
+  const ok = slots.map(s => people.map(p => !staticReason(env, p, s.cell.svc, s.cell.staffIds, s.cell.date, s.cell.shift)));
+  const hist = historyLoads(env), zero = new Array(3 + env.nt).fill(0);
+  const histV = people.map(p => hist[p.id] || zero);
+  const cellSlots = new Map();
+  slots.forEach(s => { const k = s.cell.svc + '|' + s.cell.shift; if (!cellSlots.has(k)) cellSlots.set(k, new Map()); const m = cellSlots.get(k); if (!m.has(s.cell.day)) m.set(s.cell.day, []); m.get(s.cell.day).push(s.i); });
+  const elig = []; for (let pi = 0; pi < P; pi++) if (slots.some(s => ok[s.i][pi])) elig.push(pi);
+
+  // stato mutabile
+  let assigned = new Array(NS).fill(-1), pslots = people.map(() => []), unc = NS;
+  const hardc = new Array(P).fill(0), lt = new Array(P), ld = new Array(P);
+  const itemsOf = pi => { const a = fixed[pi]; if (!pslots[pi].length) return a; const r = a.slice(); for (const i of pslots[pi]) r.push(slots[i].item); return r; };
+  const evalP = pi => { const items = itemsOf(pi); const r = analyzePerson(env, items, false); hardc[pi] = r.hard; lt[pi] = r.tiers; ld[pi] = addVec(histV[pi], loadVec(env, items.filter(x => x.inW))); };
+  const setA = (i, pi) => { const old = assigned[i]; if (old === pi) return; if (old >= 0) { const l = pslots[old]; l.splice(l.indexOf(i), 1); } else unc--; assigned[i] = pi; if (pi >= 0) pslots[pi].push(i); else unc++; };
+  const tuple = () => {
+    let hard = 0; const t = [0, 0, 0, 0, 0];
+    for (let pi = 0; pi < P; pi++) { hard += hardc[pi]; const l = lt[pi]; for (let k = 0; k < 5; k++) t[k] += l[k]; }
+    const f = fairnessCalc(env, elig.map(pi => ld[pi]), false).tiers; t[0] += f[0]; t[1] += f[1]; t[2] += f[2];
+    return [hard, unc, ...t];
+  };
+  const canAdd = (pi, j) => { if (!ok[j][pi]) return false; const items = itemsOf(pi).concat(slots[j].item); return analyzePerson(env, items, false).hard <= hardc[pi]; };
+  const resetAll = () => { assigned = new Array(NS).fill(-1); pslots = people.map(() => []); unc = NS; for (let pi = 0; pi < P; pi++) evalP(pi); };
+  // prova di modifiche: applica; se la tupla peggiora ripristina
+  const tryChanges = (changes, cur) => {
+    const aff = new Set(), undo = [];
+    for (const [i, np] of changes) { if (assigned[i] >= 0) aff.add(assigned[i]); if (np >= 0) aff.add(np); undo.push([i, assigned[i]]); }
+    const saved = [...aff].map(pi => [pi, hardc[pi], lt[pi], ld[pi]]);
+    for (const [i, np] of changes) setA(i, np);
+    for (const pi of aff) evalP(pi);
+    const t = tuple();
+    if (cmpTuple(t, cur) <= 0) return t;
+    for (let k = undo.length - 1; k >= 0; k--) setA(undo[k][0], undo[k][1]);
+    for (const [pi, h, l, d] of saved) { hardc[pi] = h; lt[pi] = l; ld[pi] = d; }
+    return null;
+  };
+
+  const rand = rng32((oc.seed | 0) + (opts.seedOffset | 0));
+  let cand = [];
+  const construct = () => {
+    resetAll();
+    cand = slots.map((s, j) => { const r = []; for (let pi = 0; pi < P; pi++) if (canAdd(pi, j)) r.push(pi); return r; });
+    for (;;) {
+      let bj = -1, bk = null;
+      for (let j = 0; j < NS; j++) {
+        if (assigned[j] >= 0 || !cand[j].length) continue;
+        const k = [cand[j].length, slots[j].item.night ? 0 : 1, rand()];
+        if (!bk || k[0] < bk[0] || (k[0] === bk[0] && (k[1] < bk[1] || (k[1] === bk[1] && k[2] < bk[2])))) { bk = k; bj = j; }
+      }
+      if (bj < 0) break;
+      let bq = -1, bt = null;
+      for (const q of cand[bj]) {
+        setA(bj, q); evalP(q); const t = tuple(); setA(bj, -1); evalP(q);
+        const c = bt ? cmpTuple(t, bt) : -1;
+        if (c < 0 || (c === 0 && rand() < 0.5)) { bt = t; bq = q; }
+      }
+      setA(bj, bq); evalP(bq);
+      for (let j = 0; j < NS; j++) if (assigned[j] < 0 && cand[j].includes(bq) && !canAdd(bq, j)) cand[j].splice(cand[j].indexOf(bq), 1);
+    }
+  };
+  // riparazione: catene di riassegnazione (cammini aumentanti, profondità limitata)
+  const place = (i, depth, visited) => {
+    const order = []; for (let pi = 0; pi < P; pi++) if (ok[i][pi]) order.push(pi);
+    order.sort((a, b) => ld[a][0] - ld[b][0] || rand() - 0.5);
+    for (const pi of order) if (canAdd(pi, i)) { setA(i, pi); evalP(pi); return true; }
+    if (depth === 0) return false;
+    visited.add(i);
+    for (const pi of order) {
+      for (const b of pslots[pi].slice()) {
+        if (visited.has(b)) continue;
+        setA(b, -1); evalP(pi);
+        if (canAdd(pi, i)) { setA(i, pi); evalP(pi); if (place(b, depth - 1, visited)) return true; setA(i, -1); evalP(pi); }
+        setA(b, pi); evalP(pi);
+      }
+    }
+    visited.delete(i); return false;
+  };
+  const repair = () => { for (let j = 0; j < NS; j++) if (assigned[j] < 0) place(j, 3, new Set()); };
+
+  const localSearch = (iters, deadline) => {
+    let cur = tuple();
+    if (NS === 0 || P < 2) return cur;
+    for (let it = 0; it < iters; it++) {
+      if ((it & 63) === 0 && Date.now() > deadline) break;
+      const r = rand(); const j = (rand() * NS) | 0; const p = assigned[j];
+      let changes = null;
+      if (r < 0.35) { // riassegna
+        const q = (rand() * P) | 0; if (q === p || !ok[j][q]) continue;
+        changes = [[j, q]];
+      } else if (r < 0.75) { // scambio tra due slot
+        const j2 = (rand() * NS) | 0; const p2 = assigned[j2];
+        if (j2 === j || p === p2 || p < 0 || p2 < 0 || !ok[j][p2] || !ok[j2][p]) continue;
+        changes = [[j, p2], [j2, p]];
+      } else { // scambio di blocco su più giorni dello stesso servizio/turno
+        if (p < 0) continue; const q = (rand() * P) | 0; if (q === p) continue;
+        const m = cellSlots.get(slots[j].cell.svc + '|' + slots[j].cell.shift); const L = 2 + ((rand() * 3) | 0), dir = rand() < 0.5 ? 1 : -1;
+        changes = []; let bad = false;
+        for (let k = 0; k < L && !bad; k++) {
+          const d = slots[j].cell.day + dir * k; const ids = m.get(d) || [];
+          for (const x of ids) {
+            if (assigned[x] === p) { if (!ok[x][q]) { bad = true; break; } changes.push([x, q]); }
+            else if (assigned[x] === q) { if (!ok[x][p]) { bad = true; break; } changes.push([x, p]); }
+          }
+        }
+        if (bad || changes.length < 2) continue;
+      }
+      const t = tryChanges(changes, cur); if (t) cur = t;
+    }
+    return cur;
+  };
+
+  // ---- ciclo principale: più restart, si tiene la soluzione migliore
+  let best = null, bestT = null, iterTot = 0;
+  const restarts = Math.max(1, oc.restarts | 0), deadlineAll = t0 + Math.max(500, oc.timeMs | 0);
+  for (let r = 0; r < restarts; r++) {
+    construct(); repair();
+    const per = Math.max(200, deadlineAll - Date.now()) / (restarts - r);
+    localSearch(oc.iterations, Date.now() + per);
+    iterTot += oc.iterations;
+    const t = tuple();
+    if (!bestT || cmpTuple(t, bestT) < 0) { bestT = t; best = assigned.slice(); }
+    if (Date.now() > deadlineAll) break;
+  }
+  const out = lockedAssign.slice();
+  best.forEach((pi, j) => { if (pi >= 0) out.push({ id: U.uid('a'), svc: slots[j].cell.svc, date: slots[j].cell.date, shift: slots[j].cell.shift, person: people[pi].id, locked: false }); });
+  week.assignments = out;
+  week.lastGen = { at: new Date().toISOString(), ms: Date.now() - t0, restarts, tuple: bestT, slots: NS, locked: lockedAssign.length };
+  return week.lastGen;
+}
+
+/* ----------------------------------------------------------- persistenza */
+const Store = {
+  load() {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return normalizeState(JSON.parse(raw)); } catch (e) { console.warn('Lettura localStorage fallita', e); }
+    return normalizeState(null);
+  },
+  save(S) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); return true; } catch (e) { console.warn('Salvataggio fallito', e); return false; } },
+  exportJSON(S) { return JSON.stringify({ app: 'turni', version: 1, exportedAt: new Date().toISOString(), data: S }, null, 2); },
+  parseImport(text) {
+    const o = JSON.parse(text);
+    const d = o && o.data ? o.data : o;
+    if (!d || typeof d !== 'object' || !Array.isArray(d.people) || !Array.isArray(d.services) || !Array.isArray(d.shiftTypes)) throw new Error('Il file non contiene una configurazione valida (people, services, shiftTypes).');
+    return normalizeState(d);
+  },
+};
+if (typeof module !== 'undefined') module.exports = { U, defaultState, normalizeState, validateSchedule, generateSchedule, previewAssignment, demandCells, weekServices, ensureWeek, Store, makeEnv, analyzePerson, personName };
+
+/* =====================================================================
+   UI: helper DOM, modali, viste, gestori dei dati, esportazione PDF
+   ===================================================================== */
+let S = Store.load();
+let V = null; // ultimo risultato di validateSchedule per la settimana corrente
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'for') el.htmlFor = v;
+    else if (k in el) { try { el[k] = v; } catch (e) { el.setAttribute(k, v); } }
+    else el.setAttribute(k, v);
+  }
+  for (const c of kids.flat(Infinity)) { if (c == null || c === false) continue; el.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return el;
+}
+
+/* ------------------------------------------------------------ storage */
+let saveTimer = null, saveWarned = false;
+function persist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { if (!Store.save(S) && !saveWarned) { saveWarned = true; toast('Impossibile salvare nel browser (spazio esaurito o storage bloccato). Esporta un backup JSON.', 'err'); } }, 150);
+}
+window.addEventListener('beforeunload', () => Store.save(S));
+function toast(msg, kind) {
+  const t = h('div', { class: 'toast ' + (kind || '') }, msg);
+  document.getElementById('toasts').append(t); setTimeout(() => t.remove(), kind === 'err' || kind === 'warn' ? 6500 : 3200);
+}
+
+/* -------------------------------------------------------------- modali */
+function openModal({ title, body, buttons, wide, onClose }) {
+  const ovl = h('div', { class: 'ovl' });
+  const close = () => { ovl.remove(); document.removeEventListener('keydown', esc); if (onClose) onClose(); };
+  const esc = e => { if (e.key === 'Escape') close(); };
+  const foot = h('footer', null, (buttons || [{ label: 'Chiudi' }]).map(b => h('button', { class: 'btn ' + (b.kind || ''), onclick: async () => { if (b.onClick) { const r = await b.onClick(close); if (r === false) return; } close(); } }, b.label)));
+  ovl.append(h('div', { class: 'modal' + (wide ? ' wide' : ''), role: 'dialog' }, h('header', null, title), h('div', { class: 'body' }, body), foot));
+  ovl.addEventListener('mousedown', e => { if (e.target === ovl) close(); });
+  document.addEventListener('keydown', esc); document.body.append(ovl);
+  const f = ovl.querySelector('input,select,textarea'); if (f) f.focus();
+  return close;
+}
+function confirmBox(msg, okLabel, danger) {
+  return new Promise(res => {
+    let done = false;
+    openModal({ title: 'Conferma', body: h('p', null, msg), buttons: [{ label: 'Annulla', onClick: () => { done = true; res(false); } }, { label: okLabel || 'Conferma', kind: danger ? 'danger' : 'primary', onClick: () => { done = true; res(true); } }], onClose: () => { if (!done) res(false); } });
+  });
+}
+function field(label, input, hint) { return h('label', { class: 'f' }, label, input, hint ? h('span', { class: 'hint' }, hint) : null); }
+function chk(label, checked, onchange) { const i = h('input', { type: 'checkbox', checked: !!checked, onchange }); return { el: h('label', { class: 'chk' }, i, label), input: i }; }
+
+/* ------------------------------------------------------------- stato UI */
+function curWs() { return S.ui.ws; }
+function setWs(ws) { S.ui.ws = U.monday(ws); persist(); render(); }
+function go(view) { S.ui.view = view; persist(); render(); window.scrollTo(0, 0); }
+function personById(id) { return S.people.find(p => p.id === id); }
+function shiftById(id) { return S.shiftTypes.find(t => t.id === id); }
+function svcName(id) { const s = S.services.find(x => x.id === id); return s ? s.name : '?'; }
+function shiftLabel(t) { return `${t.name} (${t.start}–${t.end})`; }
+function revalidate() { V = validateSchedule(S, curWs()); return V; }
+
+/* --------------------------------------------------------------- render */
+const NAV = [
+  ['Pianificazione', null], ['schedule', '📅 Programmazione'], ['dashboard', '📊 Dashboard'],
+  ['Anagrafiche', null], ['people', '👥 Personale'], ['services', '🏥 Servizi'], ['shifts', '🕒 Turni'], ['unavail', '🚫 Indisponibilità'],
+  ['Sistema', null], ['rules', '⚙️ Regole'], ['data', '💾 Dati / Import-Export'], ['help', '❓ Guida'],
+];
+function render() {
+  const app = document.getElementById('app');
+  revalidate();
+  const views = { schedule: viewSchedule, dashboard: viewDashboard, people: viewPeople, services: viewServices, shifts: viewShifts, unavail: viewUnavail, rules: viewRules, data: viewData, help: viewHelp };
+  const view = views[S.ui.view] ? S.ui.view : 'schedule';
+  const scrollY = window.scrollY;
+  app.replaceChildren(
+    h('aside', null, h('h1', null, '🗓 Turni'), h('div', { class: 'sub' }, 'Pianificazione con vincoli'),
+      h('nav', null, NAV.map(([k, l]) => l === null ? h('div', { class: 'sec' }, k) : h('button', { class: view === k ? 'on' : '', onclick: () => go(k) }, l)))),
+    h('main', null, views[view]()));
+  window.scrollTo(0, scrollY);
+}
+
+/* ===================================================================
+   VISTA: PROGRAMMAZIONE
+   =================================================================== */
+let issueTab = 'hard', hlPerson = '';
+function weekLabel(ws) { return `${U.fmtDate(ws)} – ${U.fmtDate(U.addDays(ws, 6))}`; }
+
+function viewSchedule() {
+  const ws = curWs(), week = S.weeks[ws] || emptyWeek(), cells = demandCells(S, ws);
+  const cellMap = new Map(cells.map(c => [c.key, c]));
+  const tools = h('div', { class: 'card' },
+    h('div', { class: 'row' },
+      h('button', { class: 'btn', onclick: () => setWs(U.addDays(ws, -7)), title: 'Settimana precedente' }, '◀'),
+      h('input', { type: 'date', value: ws, onchange: e => { if (e.target.value) { const m = U.monday(e.target.value); if (m !== e.target.value) toast('La settimana inizia sempre di lunedì: selezionato il ' + U.fmtDate(m), 'ok'); setWs(m); } } }),
+      h('button', { class: 'btn', onclick: () => setWs(U.addDays(ws, 7)), title: 'Settimana successiva' }, '▶'),
+      h('button', { class: 'btn', onclick: () => setWs(U.today()) }, 'Oggi'),
+      h('b', null, 'Settimana ', weekLabel(ws)),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn primary', onclick: () => runGenerate(false) }, '⚡ Genera turni'),
+      h('button', { class: 'btn', onclick: clearWeek }, '🧹 Svuota non bloccati'),
+      h('button', { class: 'btn', onclick: openWeekConfig }, '🛠 Configura settimana'),
+      h('button', { class: 'btn', onclick: exportPDF }, '📄 Esporta PDF')));
+  // banner di stato
+  let banner;
+  if (!cells.length) banner = h('div', { class: 'banner info' }, 'Nessun turno richiesto in questa settimana: configura i servizi (menu Servizi) o la settimana.');
+  else if (!V.hasAssignments) banner = h('div', { class: 'banner info' }, 'Nessuna programmazione per questa settimana. Premi «Genera turni» oppure compila manualmente la griglia.', S.people.length ? '' : ' Prima aggiungi il personale (menu Personale).');
+  else if (!V.complete) banner = h('div', { class: 'banner err' }, '⛔ PROGRAMMAZIONE INCOMPLETA', h('small', null, `${V.uncoveredCount} turni scoperti su ${V.required}` + (V.hardCount ? ` · ${V.hardCount} conflitti HARD` : '')));
+  else if (V.hardCount) banner = h('div', { class: 'banner warn' }, '⚠ Programmazione completa ma con conflitti HARD', h('small', null, `${V.hardCount} violazioni di vincoli obbligatori`));
+  else banner = h('div', { class: 'banner ok' }, '✔ Programmazione completa e valida', h('small', null, V.softCount ? `${V.softCount} preferenze non rispettate · punteggio ${U.r1(V.score.total)}` : 'nessuna preferenza violata'));
+  const lg = week.lastGen;
+  const legend = h('div', { class: 'legend' },
+    S.shiftTypes.map(t => h('span', null, h('i', { class: 'sw', style: { background: t.color } }), t.name)),
+    h('span', null, '🔒 bloccata'), h('span', null, h('i', { class: 'sw', style: { border: '2px solid var(--err)', background: '#fff1f2' } }), 'conflitto HARD'),
+    h('span', null, h('i', { class: 'sw', style: { border: '2px dashed #d97706' } }), 'preferenza violata'), h('span', null, h('i', { class: 'sw', style: { border: '2px dashed var(--err)' } }), 'scoperto'), h('span', null, h('span', { class: 'badge-un' }, '🚫 n'), 'indisponibili nel giorno'),
+    h('span', { class: 'spacer' }),
+    h('label', null, 'Evidenzia: ', h('select', { onchange: e => { hlPerson = e.target.value; render(); } }, h('option', { value: '' }, '—'), S.people.map(p => h('option', { value: p.id, selected: hlPerson === p.id }, personName(p))))));
+
+  // griglia
+  const head = h('tr', null, h('th', null, 'Servizio'), h('th', null, 'Turno'),
+    DOW_SHORT.map((d, i) => {
+      const date = U.addDays(ws, i);
+      const un = S.people.filter(p => p.active !== false && S.unavail.some(e => e.person === p.id && date >= e.from && date <= e.to));
+      const tip = un.map(p => { const e = S.unavail.find(e => e.person === p.id && date >= e.from && date <= e.to); return personName(p) + ' (' + (e.shifts && e.shifts.length ? e.shifts.map(s => (shiftById(s) || {}).name).join(', ') : 'tutto il giorno') + ')'; }).join('\n');
+      return h('th', { class: S.settings.weekendDays.includes(i) ? 'we' : '' }, d, h('small', null, U.fmtShort(date)), un.length ? h('span', { class: 'badge-un', title: tip }, '🚫 ' + un.length) : null);
+    }));
+  const rows = [];
+  for (const sv of weekServices(S, ws)) {
+    const shRows = S.shiftTypes.filter(t => (sv.req[t.id] || []).some(n => n > 0));
+    shRows.forEach((t, idx) => {
+      const tr = h('tr', null);
+      if (idx === 0) tr.append(h('td', { class: 'svc', rowSpan: shRows.length }, sv.name, sv.temp ? h('div', { class: 'hint' }, '(temporaneo)') : sv.custom ? h('div', { class: 'hint' }, '(personalizzato)') : null, sv.cont ? h('div', { class: 'hint' }, '↔ continuità') : null));
+      tr.append(h('td', { class: 'shf', style: { background: t.color } }, t.name, h('small', null, t.start + '–' + t.end)));
+      for (let d = 0; d < 7; d++) {
+        const date = U.addDays(ws, d), key = cellKey(sv.id, date, t.id), cell = cellMap.get(key);
+        if (!cell) { tr.append(h('td', { class: 'off' }, '–')); continue; }
+        const ass = week.assignments.filter(a => a.svc === sv.id && a.date === date && a.shift === t.id);
+        const ci = V.byCell[key]; const un = V.uncoveredMap[key];
+        const kids = ass.map(a => {
+          const bi = V.byAssign[a.id]; const p = personById(a.person);
+          const tip = bi ? [...bi.hard.map(i => '⛔ ' + i.msg), ...bi.soft.map(i => '▲ ' + i.msg)].join('\n') : '';
+          return h('div', { class: 'chip' + (bi && bi.hard.length ? ' err' : bi && bi.soft.length ? ' soft' : '') + (hlPerson ? (a.person === hlPerson ? ' hl' : ' dim') : ''), title: tip || personName(p) }, personName(p), a.locked ? h('span', { class: 'ic' }, '🔒') : null, bi && bi.hard.length ? h('span', { class: 'ic' }, '⛔') : null);
+        });
+        if (un) for (let k = 0; k < un.missing; k++) kids.push(h('div', { class: 'unc', title: un.msg }, '⚠ Scoperto'));
+        tr.append(h('td', { class: 'cell', style: { background: t.color + '66' }, onclick: () => openCellModal(cell), title: `${sv.name} – ${DOW_LONG[d]} – ${t.name}\nRichieste: ${cell.req}` }, kids));
+      }
+      rows.push(tr);
+    });
+  }
+  const grid = rows.length ? h('div', { class: 'scroll card', style: { padding: 0 } }, h('table', { class: 'grid' }, h('thead', null, head), h('tbody', null, rows))) : h('div', { class: 'card' }, 'Nessun servizio attivo con turni richiesti.');
+
+  // pannello problemi
+  const tabs = [['hard', `⛔ Errori HARD (${V.hardCount})`], ['unc', `⚠ Scoperti (${V.uncovered.length})`], ['soft', `▲ Preferenze SOFT (${V.softCount})`]];
+  let panel;
+  const jump = iss => { const c = iss.cells && iss.cells[0]; if (c && cellMap.get(c)) openCellModal(cellMap.get(c)); };
+  if (issueTab === 'hard') panel = V.hard.length ? V.hard.map(i => h('div', { class: 'issue h' }, h('div', null, i.msg), i.cells && i.cells.length ? h('button', { class: 'btn sm go', onclick: () => jump(i) }, 'Apri') : null)) : [h('p', { class: 'hint' }, 'Nessuna violazione di vincoli obbligatori.')];
+  else if (issueTab === 'unc') panel = V.uncovered.length ? V.uncovered.map(u => h('div', { class: 'issue u' }, h('div', null, h('b', null, u.title), h('div', null, u.msg),
+    u.excluded.length ? h('div', { class: 'why' }, 'Persone escluse: ', u.excluded.map(e => `${e.people.join(', ')} → ${e.reason}`).join(' · ')) : null,
+    u.candidates.length ? h('div', { class: 'why' }, 'Compatibili: ' + u.candidates.join(', ')) : null), h('button', { class: 'btn sm go', onclick: () => openCellModal(u.cell) }, 'Assegna'))) : [h('p', { class: 'hint' }, 'Tutti i turni richiesti sono coperti.')];
+  else panel = V.soft.length ? V.soft.map(i => h('div', { class: 'issue s' }, h('div', null, h('span', { class: 'pill' }, TIER_NAMES[i.tier]), ' ', i.msg), i.cells && i.cells.length ? h('button', { class: 'btn sm go', onclick: () => jump(i) }, 'Apri') : null)) : [h('p', { class: 'hint' }, 'Nessuna preferenza violata.')];
+  const issues = h('div', { class: 'card' }, h('div', { class: 'tabs' }, tabs.map(([k, l]) => h('button', { class: issueTab === k ? 'on' : '', onclick: () => { issueTab = k; render(); } }, l))), panel);
+  const notes = h('div', { class: 'card' }, h('h3', null, 'Note della settimana ', h('span', { class: 'hint' }, '(compaiono nel PDF)')), h('textarea', { value: week.notes || '', placeholder: 'Es.: riunione di reparto giovedì…', oninput: e => { ensureWeek(S, ws).notes = e.target.value; persist(); } }),
+    lg ? h('p', { class: 'hint' }, `Ultima generazione: ${new Date(lg.at).toLocaleString('it-IT')} · ${U.r1(lg.ms / 1000)} s · ${lg.slots} posti assegnati dall'algoritmo, ${lg.locked} assegnazioni bloccate rispettate.`) : null);
+  const welcome = !S.people.length ? h('div', { class: 'banner warn' }, 'Il personale è vuoto. ', h('button', { class: 'btn sm', onclick: () => go('people') }, 'Aggiungi personale'), h('button', { class: 'btn sm', onclick: loadDemoPeople }, 'Carica personale di esempio')) : null;
+  return h('div', null, h('h2', null, S.meta.name), h('p', { class: 'lead' }, 'Griglia settimanale – clicca una cella per assegnare o modificare manualmente.'), welcome, tools, banner, h('div', { class: 'card' }, legend), grid, issues, notes);
+}
+
+async function runGenerate() {
+  const ws = curWs();
+  if (!S.people.length) { toast('Aggiungi prima il personale.', 'warn'); return; }
+  if (!demandCells(S, ws).length) { toast('Nessun turno richiesto in questa settimana.', 'warn'); return; }
+  const week = ensureWeek(S, ws), unl = week.assignments.filter(a => !a.locked).length;
+  if (unl > 0 && !(await confirmBox(`Verranno sostituite ${unl} assegnazioni non bloccate (anche modifiche manuali). Le assegnazioni bloccate restano fisse. Continuare?`, 'Genera', false))) return;
+  const ovl = h('div', { class: 'ovl' }, h('div', { class: 'modal' }, h('div', { class: 'body row' }, h('span', { class: 'spin' }), h('b', null, 'Ottimizzazione in corso…'), h('span', { class: 'hint' }, 'vincoli HARD, poi penalità SOFT per priorità'))));
+  document.body.append(ovl);
+  setTimeout(() => {
+    try {
+      const info = generateSchedule(S, ws, { seedOffset: (week.genCount = (week.genCount || 0) + 1) - 1 });
+      persist(); revalidate();
+      ovl.remove(); render();
+      if (V.uncoveredCount) toast(`PROGRAMMAZIONE INCOMPLETA: ${V.uncoveredCount} turni scoperti. Vedi il pannello «Scoperti».`, 'err');
+      else if (V.hardCount) toast(`Generata, ma ${V.hardCount} violazioni HARD (assegnazioni bloccate o dati incoerenti).`, 'warn');
+      else toast(`Programmazione generata in ${U.r1(info.ms / 1000)} s – nessun conflitto, ${V.softCount} preferenze non rispettate.`, 'ok');
+    } catch (e) { console.error(e); ovl.remove(); toast('Errore durante la generazione: ' + e.message, 'err'); }
+  }, 40);
+}
+async function clearWeek() {
+  const ws = curWs(), week = ensureWeek(S, ws), n = week.assignments.filter(a => !a.locked).length;
+  if (!n) { toast('Nessuna assegnazione non bloccata da rimuovere.'); return; }
+  if (!(await confirmBox(`Rimuovere ${n} assegnazioni non bloccate dalla settimana?`, 'Svuota', true))) return;
+  week.assignments = week.assignments.filter(a => a.locked); persist(); render(); toast('Settimana svuotata (bloccate mantenute).', 'ok');
+}
+
+/* ---- modifica manuale di una cella (servizio+giorno+turno) ---- */
+function openCellModal(cell) {
+  const ws = curWs(), week = ensureWeek(S, ws), t = shiftById(cell.shift);
+  const existing = week.assignments.filter(a => a.svc === cell.svc && a.date === cell.date && a.shift === cell.shift);
+  const n = Math.max(cell.req, existing.length);
+  const slots = Array.from({ length: n }, (_, i) => ({ person: existing[i] ? existing[i].person : '', locked: existing[i] ? !!existing[i].locked : false, id: existing[i] ? existing[i].id : null }));
+  const short = { INDISP: 'indisponibile', NONABIL: 'non abilitato', NOTTE: 'no notti', INATTIVO: 'non attivo', DOPPIA: 'già impegnato', RIPOSO: 'riposo', POSTNOTTE: 'post-notte', GIORNI: 'max giorni', ORE: 'max ore', NOTTI: 'max notti' };
+  const people = [...S.people].sort((a, b) => personName(a).localeCompare(personName(b)));
+  const container = h('div', null);
+  const refresh = () => {
+    container.replaceChildren(...slots.map((sl, i) => {
+      const others = slots.filter((_, k) => k !== i).map(x => x.person).filter(Boolean);
+      const sel = h('select', { onchange: e => { sl.person = e.target.value; refresh(); } }, h('option', { value: '' }, '— nessuno —'),
+        people.map(p => { const pv = previewAssignment(S, ws, cell, p.id, others); const mark = pv.hard.length ? '✖' : pv.soft.length ? '▲' : '✔'; const why = pv.hard.length ? ' — ' + (short[pv.hardTypes[0]] || 'conflitto') : pv.soft.length ? ' — preferenza' : ''; return h('option', { value: p.id, selected: sl.person === p.id }, `${mark} ${personName(p)}${p.role ? ' (' + p.role + ')' : ''}${why}`); }));
+      const msgs = [];
+      if (sl.person) { const pv = previewAssignment(S, ws, cell, sl.person, others); pv.hard.forEach(m => msgs.push(h('div', { class: 'msg h' }, '⛔ ' + m))); pv.soft.forEach(m => msgs.push(h('div', { class: 'msg s' }, '▲ ' + m))); if (!pv.hard.length && !pv.soft.length) msgs.push(h('div', { class: 'msg g' }, '✔ Nessun problema rilevato')); }
+      const lk = chk('Blocca assegnazione (fissa nella rigenerazione)', sl.locked, e => { sl.locked = e.target.checked; });
+      return h('div', { class: 'slotrow' }, h('div', { class: 'row' }, h('b', null, `Posto ${i + 1}${i >= cell.req ? ' (in eccesso)' : ''}`), sel), lk.el, msgs);
+    }));
+  };
+  refresh();
+  openModal({
+    title: `${cell.svcName} – ${DOW_LONG[cell.dow]} ${U.fmtDate(cell.date)} – ${t.name} (${t.start}–${t.end})`, wide: true,
+    body: h('div', null, h('p', { class: 'hint' }, `Persone richieste: ${cell.req}. ✔ nessun problema · ▲ viola una preferenza · ✖ viola un vincolo obbligatorio (la modifica è comunque consentita ma verrà evidenziata).`), container),
+    buttons: [{ label: 'Annulla' }, {
+      label: 'Salva', kind: 'primary', onClick: () => {
+        week.assignments = week.assignments.filter(a => !(a.svc === cell.svc && a.date === cell.date && a.shift === cell.shift));
+        slots.forEach(sl => { if (sl.person) week.assignments.push({ id: sl.id || U.uid('a'), svc: cell.svc, date: cell.date, shift: cell.shift, person: sl.person, locked: sl.locked, manual: true }); });
+        persist(); revalidate(); render();
+        const bad = (V.byCell[cell.key] || { hard: [] }).hard.length, soft = (V.byCell[cell.key] || { soft: [] }).soft.length;
+        if (bad) toast(`Salvato, ma ${bad} violazione/i HARD: ${V.byCell[cell.key].hard[0].msg}`, 'err'); else if (soft) toast(`Salvato. ${soft} preferenza/e non rispettata/e.`, 'warn'); else toast('Assegnazione salvata.', 'ok');
+      }
+    }],
+  });
+}
+
+/* ---- configurazione di settimana (override servizi) ---- */
+function reqMatrix(initial) {
+  const state = {}; S.shiftTypes.forEach(t => { state[t.id] = Array.from({ length: 7 }, (_, i) => (initial && initial[t.id] ? parseInt(initial[t.id][i], 10) || 0 : 0)); });
+  const table = h('table', { class: 'matrix' }, h('thead', null, h('tr', null, h('th', null, 'Turno'), DOW_SHORT.map(d => h('th', null, d)))),
+    h('tbody', null, S.shiftTypes.map(t => h('tr', null, h('td', { style: { textAlign: 'left' } }, h('i', { class: 'dot', style: { background: t.color } }), ' ', t.name),
+      state[t.id].map((v, i) => h('td', null, h('input', { type: 'number', min: 0, max: 99, value: v, oninput: e => { state[t.id][i] = Math.max(0, parseInt(e.target.value, 10) || 0); } })))))));
+  return { el: h('div', { class: 'scroll' }, table, h('div', { class: 'hint' }, 'Numero di persone richieste per giorno e turno (0 = turno non coperto).')), get: () => U.deepCopy(state) };
+}
+function openWeekConfig() {
+  const ws = curWs(), week = ensureWeek(S, ws);
+  const ov = U.deepCopy(week.overrides || {}), extra = U.deepCopy(week.extra || []);
+  const box = h('div', null);
+  const matrices = {};
+  const draw = () => {
+    box.replaceChildren(h('div', null,
+      h('h3', null, 'Servizi globali in questa settimana'), h('p', { class: 'hint' }, 'Le modifiche valgono SOLO per la settimana ' + weekLabel(ws) + '.'),
+      S.services.map(sv => {
+        const o = ov[sv.id] || {}; const active = typeof o.active === 'boolean' ? o.active : sv.active; const custom = !!o.req;
+        const holder = h('div', null);
+        if (custom) { matrices[sv.id] = reqMatrix(o.req); holder.append(matrices[sv.id].el); } else delete matrices[sv.id];
+        return h('div', { class: 'slotrow' }, h('div', { class: 'row' }, h('b', null, sv.name), !sv.active ? h('span', { class: 'pill' }, 'disattivo globalmente') : null, h('span', { class: 'spacer' }),
+          chk('Attivo in questa settimana', active, e => { ov[sv.id] = Object.assign(ov[sv.id] || {}, { active: e.target.checked }); }).el,
+          chk('Richieste personalizzate', custom, e => { const o2 = ov[sv.id] = ov[sv.id] || {}; if (e.target.checked) o2.req = U.deepCopy(sv.req); else delete o2.req; draw(); }).el), holder);
+      }),
+      h('h3', null, 'Servizi temporanei (solo questa settimana)'),
+      extra.map((x, i) => { matrices['x' + x.id] = matrices['x' + x.id] || reqMatrix(x.req);
+        return h('div', { class: 'slotrow' }, h('div', { class: 'row' }, h('input', { type: 'text', value: x.name, placeholder: 'Nome servizio', oninput: e => { x.name = e.target.value; } }), chk('Continuità', x.continuity, e => { x.continuity = e.target.checked; }).el, h('span', { class: 'spacer' }), h('button', { class: 'btn sm danger', onclick: () => { extra.splice(i, 1); draw(); } }, 'Rimuovi')),
+          h('div', { class: 'hint' }, 'Personale abilitato:'), h('div', null, S.people.map(p => chk(personName(p), (x.staff || []).includes(p.id), e => { x.staff = x.staff || []; if (e.target.checked) x.staff.push(p.id); else x.staff = x.staff.filter(z => z !== p.id); }).el)), matrices['x' + x.id].el); }),
+      h('button', { class: 'btn', onclick: () => { extra.push({ id: U.uid('x'), name: 'Nuovo servizio', continuity: false, staff: S.people.map(p => p.id), req: {} }); draw(); } }, '+ Aggiungi servizio temporaneo')));
+  };
+  draw();
+  openModal({ title: 'Configura settimana ' + weekLabel(ws), body: box, wide: true, buttons: [{ label: 'Annulla' }, {
+    label: 'Applica', kind: 'primary', onClick: () => {
+      for (const sv of S.services) { const o = ov[sv.id]; if (!o) continue; if (matrices[sv.id]) o.req = matrices[sv.id].get(); if (typeof o.active === 'boolean' && o.active === sv.active) delete o.active; if (!o.req && typeof o.active !== 'boolean') delete ov[sv.id]; }
+      for (const x of extra) { x.name = (x.name || '').trim() || 'Servizio temporaneo'; x.req = matrices['x' + x.id].get(); }
+      week.overrides = ov; week.extra = extra;
+      const cells = demandCells(S, ws), cnt = {}; const keep = [];
+      for (const a of week.assignments) { const c = cells.find(c => c.key === cellKey(a.svc, a.date, a.shift)); if (!c) continue; cnt[c.key] = (cnt[c.key] || 0) + 1; if (cnt[c.key] <= c.req) keep.push(a); }
+      const removed = week.assignments.length - keep.length; week.assignments = keep; persist(); render();
+      toast('Configurazione della settimana aggiornata.' + (removed ? ` Rimosse ${removed} assegnazioni non più previste.` : ''), 'ok');
+    }
+  }] });
+}
+
+/* ===================================================================
+   VISTA: DASHBOARD
+   =================================================================== */
+function viewDashboard() {
+  const ws = curWs();
+  const k = (n, label, cls) => h('div', { class: 'kpi ' + (cls || '') }, h('b', null, n), h('span', null, label));
+  const maxPts = Math.max(1, ...V.stats.map(s => s.points));
+  return h('div', null, h('h2', null, 'Dashboard'),
+    h('div', { class: 'row' }, h('p', { class: 'lead' }, 'Settimana ' + weekLabel(ws)), h('span', { class: 'spacer' }),
+      h('button', { class: 'btn', onclick: () => setWs(U.addDays(ws, -7)) }, '◀ Precedente'), h('button', { class: 'btn', onclick: () => setWs(U.addDays(ws, 7)) }, 'Successiva ▶')),
+    h('h3', null, 'Stato programmazione'),
+    h('div', { class: 'kpis' }, k(V.required, 'Turni richiesti'), k(V.covered, 'Turni coperti', V.complete && V.required ? 'ok' : ''), k(V.uncoveredCount, 'Turni scoperti', V.uncoveredCount ? 'err' : 'ok'), k(V.hardCount, 'Conflitti HARD', V.hardCount ? 'err' : 'ok'), k(V.softCount, 'Preferenze non rispettate', V.softCount ? 'warn' : 'ok'), k(U.r1(V.score.total), 'Punteggio (penalità)')),
+    !V.complete ? h('div', { class: 'banner err' }, '⛔ PROGRAMMAZIONE INCOMPLETA') : null,
+    h('div', { class: 'card' }, h('h3', null, 'Penalità per priorità'), h('table', { class: 't' }, h('thead', null, h('tr', null, h('th', null, 'Priorità'), h('th', null, 'Regola'), h('th', null, 'Penalità'))),
+      h('tbody', null, V.score.tiers.map((v, i) => h('tr', null, h('td', null, 'P' + (i + 3)), h('td', null, TIER_NAMES[i]), h('td', null, h('span', { class: 'pill ' + (v > 0 ? 'warn' : 'ok') }, U.r1(v))))))),
+      h('p', { class: 'hint' }, 'Le priorità sono rigide: l\'algoritmo non peggiora mai una priorità superiore per migliorarne una inferiore. P1–P2 (vincoli HARD) non hanno penalità: non devono mai essere violati.')),
+    h('div', { class: 'card' }, h('h3', null, 'Distribuzione del personale'), h('div', { class: 'scroll' }, h('table', { class: 't' },
+      h('thead', null, h('tr', null, h('th', null, 'Persona'), h('th', null, 'Turni'), h('th', null, 'Punti'), S.shiftTypes.map(t => h('th', null, t.name)), h('th', null, 'Weekend'), h('th', null, 'Ore'), h('th', null, 'Gg consecutivi'), h('th', null, 'vs media'))),
+      h('tbody', null, V.stats.map(s => h('tr', null, h('td', null, h('b', null, personName(s.person)), s.person.active === false ? h('span', { class: 'pill' }, 'non attivo') : null),
+        h('td', null, s.shifts), h('td', null, h('div', { class: 'row' }, U.r1(s.points), h('div', { class: 'bar', style: { width: '80px' } }, h('i', { style: { width: (100 * s.points / maxPts) + '%' } })))),
+        s.byType.map(n => h('td', null, n)), h('td', null, s.weekend), h('td', null, U.r1(s.hours)), h('td', null, h('span', { class: 'pill ' + (s.maxConsec > S.settings.softConsecutiveDays && S.settings.softConsecutiveDays > 0 ? 'warn' : '') }, s.maxConsec)),
+        h('td', null, s.delta === null ? h('span', { class: 'hint' }, 'n/d') : h('span', { class: 'pill ' + (Math.abs(s.delta) > S.settings.fairnessTolerance ? 'warn' : 'ok') }, (s.delta > 0 ? '+' : '') + U.r1(s.delta)))))))),
+      h('p', { class: 'hint' }, `Punti: peso del turno (+${S.settings.weekendBonus} nel weekend). L'equità considera anche le ultime ${S.settings.fairnessHistoryWeeks} settimane programmate. «vs media» confronta i punti (storico incluso) con la media del personale idoneo.`)));
+}
+
+/* ===================================================================
+   VISTA: PERSONALE
+   =================================================================== */
+function viewPeople() {
+  return h('div', null, h('h2', null, 'Personale'), h('p', { class: 'lead' }, 'Anagrafica, servizi abilitati e abilitazione alle notti.'),
+    h('div', { class: 'row', style: { marginBottom: '10px' } }, h('button', { class: 'btn primary', onclick: () => editPerson() }, '+ Nuova persona'), h('button', { class: 'btn', onclick: loadDemoPeople }, 'Carica personale di esempio')),
+    h('div', { class: 'card scroll' }, S.people.length ? h('table', { class: 't' }, h('thead', null, h('tr', null, ['Nome visualizzato', 'Nome e cognome', 'Qualifica', 'Servizi', 'Notte', 'Stato', 'Note', ''].map(x => h('th', null, x)))),
+      h('tbody', null, S.people.map(p => h('tr', null, h('td', null, h('b', null, personName(p))), h('td', null, `${p.first || ''} ${p.last || ''}`), h('td', null, p.role), h('td', null, p.services.map(svcName).join(', ')), h('td', null, p.night ? '🌙 sì' : 'no'), h('td', null, h('span', { class: 'pill ' + (p.active === false ? '' : 'ok') }, p.active === false ? 'non attivo' : 'attivo')), h('td', null, p.notes),
+        h('td', { style: { whiteSpace: 'nowrap' } }, h('button', { class: 'btn sm', onclick: () => editPerson(p) }, 'Modifica'), ' ', h('button', { class: 'btn sm danger', onclick: () => deletePerson(p) }, 'Elimina')))))) : h('p', { class: 'hint' }, 'Nessuna persona inserita.')));
+}
+function editPerson(p) {
+  const isNew = !p; const d = p ? U.deepCopy(p) : { id: U.uid('p'), first: '', last: '', display: '', role: '', services: [], night: false, active: true, notes: '' };
+  const f = (k, label, hint) => field(label, h('input', { type: 'text', value: d[k] || '', oninput: e => { d[k] = e.target.value; } }), hint);
+  const body = h('div', null, h('div', { class: 'grid2' }, f('first', 'Nome'), f('last', 'Cognome')), h('div', { class: 'grid2' }, f('display', 'Nome visualizzato', 'Se vuoto: Nome + iniziale del cognome'), f('role', 'Ruolo / qualifica')),
+    h('div', { class: 'f' }, h('b', { style: { fontSize: '12px' } }, 'Servizi abilitati'), h('div', null, S.services.length ? S.services.map(sv => chk(sv.name, d.services.includes(sv.id), e => { if (e.target.checked) d.services.push(sv.id); else d.services = d.services.filter(x => x !== sv.id); }).el) : 'Nessun servizio definito.')),
+    chk('Abilitato ai turni di notte', d.night, e => { d.night = e.target.checked; }).el, chk('Attivo (disattiva per assenze prolungate)', d.active, e => { d.active = e.target.checked; }).el,
+    field('Note', h('textarea', { value: d.notes || '', oninput: e => { d.notes = e.target.value; } })));
+  openModal({ title: isNew ? 'Nuova persona' : 'Modifica persona', body, buttons: [{ label: 'Annulla' }, { label: 'Salva', kind: 'primary', onClick: () => {
+    d.first = d.first.trim(); d.last = d.last.trim(); if (!d.first && !d.last && !d.display.trim()) { toast('Inserisci almeno un nome.', 'warn'); return false; }
+    if (!d.display.trim()) d.display = (d.first + (d.last ? ' ' + d.last[0].toUpperCase() + '.' : '')).trim(); else d.display = d.display.trim();
+    if (isNew) S.people.push(d); else Object.assign(p, d); persist(); render(); toast('Persona salvata.', 'ok'); } }] });
+}
+async function deletePerson(p) {
+  const n = Object.values(S.weeks).reduce((s, w) => s + w.assignments.filter(a => a.person === p.id).length, 0);
+  if (!(await confirmBox(`Eliminare ${personName(p)}? Verranno rimosse anche ${n} assegnazioni e le relative indisponibilità.`, 'Elimina', true))) return;
+  S.people = S.people.filter(x => x.id !== p.id); S.unavail = S.unavail.filter(u => u.person !== p.id);
+  Object.values(S.weeks).forEach(w => { w.assignments = w.assignments.filter(a => a.person !== p.id); (w.extra || []).forEach(x => { if (x.staff) x.staff = x.staff.filter(i => i !== p.id); }); });
+  persist(); render(); toast('Persona eliminata.', 'ok');
+}
+async function loadDemoPeople() {
+  if (S.people.length && !(await confirmBox('Aggiungere 12 persone di esempio al personale esistente?', 'Aggiungi'))) return;
+  const names = ['Mario Rossi', 'Luca Bianchi', 'Anna Verdi', 'Giulia Neri', 'Paolo Gallo', 'Sara Conti', 'Marco Ricci', 'Elena Moretti', 'Davide Greco', 'Chiara Fontana', 'Andrea Costa', 'Silvia Leone'];
+  const all = S.services.map(s => s.id);
+  const first = S.people.length;
+  names.forEach((n, i) => { const [f, l] = n.split(' '); S.people.push({ id: U.uid('p'), first: f, last: l, display: `${f} ${l[0]}.`, role: i % 3 === 0 ? 'Infermiere' : 'Operatore', services: i < 9 ? all.slice() : all.filter(x => x !== 'svc_uti'), night: i < 8, active: true, notes: '' }); });
+  const ws = curWs(), P = i => S.people[first + i].id;
+  S.unavail.push({ id: U.uid('u'), person: P(0), from: ws, to: ws, shifts: null, note: 'esempio' }, { id: U.uid('u'), person: P(0), from: U.addDays(ws, 2), to: U.addDays(ws, 2), shifts: ['pom'], note: 'esempio' }, { id: U.uid('u'), person: P(1), from: U.addDays(ws, 5), to: U.addDays(ws, 5), shifts: ['not'], note: 'esempio' });
+  persist(); render(); toast('Personale di esempio aggiunto (con alcune indisponibilità).', 'ok');
+}
+
+/* ===================================================================
+   VISTA: SERVIZI
+   =================================================================== */
+function viewServices() {
+  return h('div', null, h('h2', null, 'Servizi'), h('p', { class: 'lead' }, 'Configurazione generale. Per variarla in una sola settimana usa «Configura settimana» nella Programmazione.'),
+    h('div', { class: 'row', style: { marginBottom: '10px' } }, h('button', { class: 'btn primary', onclick: () => editService() }, '+ Nuovo servizio')),
+    S.services.map(sv => h('div', { class: 'card' }, h('div', { class: 'row' }, h('h3', { style: { margin: 0 } }, sv.name), h('span', { class: 'pill ' + (sv.active ? 'ok' : '') }, sv.active ? 'attivo' : 'disattivato'), sv.continuity ? h('span', { class: 'pill' }, '↔ continuità del personale') : null, h('span', { class: 'spacer' }),
+      h('button', { class: 'btn sm', onclick: () => { sv.active = !sv.active; persist(); render(); } }, sv.active ? 'Disattiva' : 'Attiva'), h('button', { class: 'btn sm', onclick: () => editService(sv) }, 'Modifica'), h('button', { class: 'btn sm danger', onclick: () => deleteService(sv) }, 'Elimina')),
+      h('div', { class: 'scroll' }, h('table', { class: 't matrix' }, h('thead', null, h('tr', null, h('th', null, 'Turno'), DOW_SHORT.map(d => h('th', null, d)))), h('tbody', null, S.shiftTypes.map(t => h('tr', null, h('td', { style: { textAlign: 'left' } }, h('i', { class: 'dot', style: { background: t.color } }), ' ', t.name), (sv.req[t.id] || []).map(n => h('td', null, n ? h('b', null, n) : h('span', { class: 'hint' }, '–')))))))))),
+    !S.services.length ? h('div', { class: 'card' }, 'Nessun servizio definito.') : null);
+}
+function editService(sv) {
+  const isNew = !sv; const d = sv ? U.deepCopy(sv) : { id: U.uid('svc'), name: '', active: true, continuity: false, req: {} };
+  const m = reqMatrix(d.req);
+  openModal({ title: isNew ? 'Nuovo servizio' : 'Modifica servizio', wide: true, body: h('div', null, field('Nome del servizio', h('input', { type: 'text', value: d.name, oninput: e => { d.name = e.target.value; } })),
+    chk('Attivo', d.active, e => { d.active = e.target.checked; }).el, chk('Cerca continuità del personale (stessa persona su giorni consecutivi, es. UTI)', d.continuity, e => { d.continuity = e.target.checked; }).el, h('h3', null, 'Persone richieste per giorno e turno'), m.el),
+    buttons: [{ label: 'Annulla' }, { label: 'Salva', kind: 'primary', onClick: () => { d.name = d.name.trim(); if (!d.name) { toast('Il nome è obbligatorio.', 'warn'); return false; } d.req = m.get(); if (isNew) S.services.push(d); else Object.assign(sv, d); persist(); render(); toast('Servizio salvato.', 'ok'); } }] });
+}
+async function deleteService(sv) {
+  if (!(await confirmBox(`Eliminare il servizio «${sv.name}»? Saranno rimosse le relative assegnazioni in tutte le settimane.`, 'Elimina', true))) return;
+  S.services = S.services.filter(x => x.id !== sv.id); S.people.forEach(p => { p.services = p.services.filter(i => i !== sv.id); });
+  Object.values(S.weeks).forEach(w => { w.assignments = w.assignments.filter(a => a.svc !== sv.id); delete w.overrides[sv.id]; }); persist(); render(); toast('Servizio eliminato.', 'ok');
+}
+
+/* ===================================================================
+   VISTA: TURNI (tipologie)
+   =================================================================== */
+function viewShifts() {
+  return h('div', null, h('h2', null, 'Tipologie di turno'), h('p', { class: 'lead' }, 'Orari, durata, peso in punti e flag «notturno». Nessun orario è fisso nel codice.'),
+    h('div', { class: 'row', style: { marginBottom: '10px' } }, h('button', { class: 'btn primary', onclick: () => editShift() }, '+ Nuova tipologia')),
+    h('div', { class: 'card scroll' }, h('table', { class: 't' }, h('thead', null, h('tr', null, ['Colore', 'Nome', 'Inizio', 'Fine', 'Durata', 'Notturno', 'Punti', ''].map(x => h('th', null, x)))),
+      h('tbody', null, S.shiftTypes.map(t => h('tr', null, h('td', null, h('i', { class: 'sw', style: { background: t.color, width: '24px' } })), h('td', null, h('b', null, t.name)), h('td', null, t.start), h('td', null, t.end + (U.hours(t.end) <= U.hours(t.start) ? ' (+1 g)' : '')), h('td', null, U.r1(shiftDuration(t)) + ' h'), h('td', null, t.night ? '🌙 sì' : 'no'), h('td', null, t.points),
+        h('td', null, h('button', { class: 'btn sm', onclick: () => editShift(t) }, 'Modifica'), ' ', h('button', { class: 'btn sm danger', onclick: () => deleteShift(t) }, 'Elimina'))))))));
+}
+function editShift(t) {
+  const isNew = !t; const d = t ? U.deepCopy(t) : { id: U.uid('t'), name: '', start: '08:00', end: '16:00', night: false, points: 1, color: '#bbf7d0' };
+  const start = h('input', { type: 'time', value: d.start }), end = h('input', { type: 'time', value: d.end }), dur = h('input', { type: 'number', min: 0.25, max: 24, step: 0.25, value: U.r1(shiftDuration(d)) });
+  const sync = () => { d.start = start.value || d.start; d.end = end.value || d.end; dur.value = Math.round(shiftDuration(d) * 100) / 100; };
+  start.addEventListener('input', sync); end.addEventListener('input', sync);
+  dur.addEventListener('input', () => { const v = parseFloat(dur.value); if (v > 0 && v <= 24) { d.start = start.value; d.end = U.hhmm(U.hours(d.start) + v); end.value = d.end; } });
+  openModal({ title: isNew ? 'Nuova tipologia di turno' : 'Modifica turno', body: h('div', null, field('Nome', h('input', { type: 'text', value: d.name, oninput: e => { d.name = e.target.value; } })),
+    h('div', { class: 'grid3' }, field('Ora di inizio', start), field('Ora di fine', end, 'Se ≤ inizio, il turno termina il giorno dopo'), field('Durata (ore)', dur)),
+    h('div', { class: 'grid2' }, field('Punti (peso nell\'equità)', h('input', { type: 'number', min: 0, step: 0.5, value: d.points, oninput: e => { d.points = parseFloat(e.target.value) || 0; } })), field('Colore', h('input', { type: 'color', value: d.color, oninput: e => { d.color = e.target.value; } }))),
+    chk('Turno notturno (attiva riposo post-notte e abilitazione «Notte»)', d.night, e => { d.night = e.target.checked; }).el),
+    buttons: [{ label: 'Annulla' }, { label: 'Salva', kind: 'primary', onClick: () => { d.name = d.name.trim(); if (!d.name) { toast('Il nome è obbligatorio.', 'warn'); return false; } d.start = start.value; d.end = end.value; if (!d.start || !d.end) { toast('Orari non validi.', 'warn'); return false; }
+      if (isNew) { S.shiftTypes.push(d); S.services.forEach(sv => { sv.req[d.id] = [0, 0, 0, 0, 0, 0, 0]; }); } else Object.assign(t, d); persist(); render(); toast('Turno salvato.', 'ok'); } }] });
+}
+async function deleteShift(t) {
+  if (S.shiftTypes.length <= 1) { toast('Deve esistere almeno una tipologia di turno.', 'warn'); return; }
+  if (!(await confirmBox(`Eliminare la tipologia «${t.name}»? Saranno rimosse richieste, indisponibilità per turno e assegnazioni collegate.`, 'Elimina', true))) return;
+  S.shiftTypes = S.shiftTypes.filter(x => x.id !== t.id); S.services.forEach(sv => delete sv.req[t.id]);
+  S.unavail = S.unavail.filter(u => { if (u.shifts && u.shifts.length) { u.shifts = u.shifts.filter(x => x !== t.id); return u.shifts.length > 0; } return true; });
+  Object.values(S.weeks).forEach(w => { w.assignments = w.assignments.filter(a => a.shift !== t.id); Object.values(w.overrides || {}).forEach(o => { if (o.req) delete o.req[t.id]; }); (w.extra || []).forEach(x => { if (x.req) delete x.req[t.id]; }); });
+  persist(); render(); toast('Turno eliminato.', 'ok');
+}
+
+/* ===================================================================
+   VISTA: INDISPONIBILITÀ
+   =================================================================== */
+let unavailFilter = '';
+function viewUnavail() {
+  const list = S.unavail.filter(u => !unavailFilter || u.person === unavailFilter).sort((a, b) => a.from.localeCompare(b.from));
+  return h('div', null, h('h2', null, 'Indisponibilità'), h('p', { class: 'lead' }, 'Giornata intera, singoli turni o più giorni consecutivi. Sono vincoli HARD: il generatore non assegna mai la persona.'),
+    h('div', { class: 'row', style: { marginBottom: '10px' } }, h('button', { class: 'btn primary', onclick: () => editUnavail() }, '+ Nuova indisponibilità'), h('label', null, 'Persona: ', h('select', { onchange: e => { unavailFilter = e.target.value; render(); } }, h('option', { value: '' }, 'Tutte'), S.people.map(p => h('option', { value: p.id, selected: unavailFilter === p.id }, personName(p)))))),
+    h('div', { class: 'card scroll' }, list.length ? h('table', { class: 't' }, h('thead', null, h('tr', null, ['Persona', 'Dal', 'Al', 'Turni', 'Note', ''].map(x => h('th', null, x)))),
+      h('tbody', null, list.map(u => h('tr', null, h('td', null, h('b', null, personName(personById(u.person)))), h('td', null, U.fmtDate(u.from)), h('td', null, U.fmtDate(u.to)), h('td', null, u.shifts && u.shifts.length ? u.shifts.map(s => (shiftById(s) || {}).name).join(', ') : 'Tutto il giorno'), h('td', null, u.note),
+        h('td', null, h('button', { class: 'btn sm', onclick: () => editUnavail(u) }, 'Modifica'), ' ', h('button', { class: 'btn sm danger', onclick: () => { S.unavail = S.unavail.filter(x => x !== u); persist(); render(); toast('Indisponibilità rimossa.', 'ok'); } }, 'Elimina')))))) : h('p', { class: 'hint' }, 'Nessuna indisponibilità.')));
+}
+function editUnavail(u) {
+  if (!S.people.length) { toast('Aggiungi prima il personale.', 'warn'); return; }
+  const isNew = !u; const d = u ? U.deepCopy(u) : { id: U.uid('u'), person: unavailFilter || S.people[0].id, from: curWs(), to: curWs(), shifts: null, note: '' };
+  const allDay = d.shifts == null || !d.shifts.length; const sel = new Set(d.shifts || []);
+  const shiftsBox = h('div', null, S.shiftTypes.map(t => chk(shiftLabel(t), sel.has(t.id), e => { if (e.target.checked) sel.add(t.id); else sel.delete(t.id); }).el));
+  const modeAll = h('input', { type: 'radio', name: 'um', checked: allDay, onchange: () => { shiftsBox.style.display = 'none'; } }), modeSel = h('input', { type: 'radio', name: 'um', checked: !allDay, onchange: () => { shiftsBox.style.display = ''; } });
+  shiftsBox.style.display = allDay ? 'none' : '';
+  openModal({ title: isNew ? 'Nuova indisponibilità' : 'Modifica indisponibilità', body: h('div', null, field('Persona', h('select', { onchange: e => { d.person = e.target.value; } }, S.people.map(p => h('option', { value: p.id, selected: d.person === p.id }, personName(p))))),
+    h('div', { class: 'grid2' }, field('Dal', h('input', { type: 'date', value: d.from, onchange: e => { d.from = e.target.value; } })), field('Al (incluso)', h('input', { type: 'date', value: d.to, onchange: e => { d.to = e.target.value; } }))),
+    h('div', { class: 'f' }, h('b', { style: { fontSize: '12px' } }, 'Ambito'), h('label', { class: 'chk' }, modeAll, 'Giornata intera'), h('label', { class: 'chk' }, modeSel, 'Solo alcuni turni'), shiftsBox),
+    field('Note', h('input', { type: 'text', value: d.note || '', oninput: e => { d.note = e.target.value; } }))),
+    buttons: [{ label: 'Annulla' }, { label: 'Salva', kind: 'primary', onClick: () => {
+      if (!d.from || !d.to) { toast('Date mancanti.', 'warn'); return false; } if (d.to < d.from) { toast('La data finale precede quella iniziale.', 'warn'); return false; }
+      d.shifts = modeSel.checked ? [...sel] : null; if (modeSel.checked && !d.shifts.length) { toast('Seleziona almeno un turno oppure «Giornata intera».', 'warn'); return false; }
+      if (isNew) S.unavail.push(d); else Object.assign(u, d); persist(); render(); toast('Indisponibilità salvata.', 'ok'); } }] });
+}
+
+/* ===================================================================
+   VISTA: REGOLE
+   =================================================================== */
+const RULE_GROUPS = [
+  ['Riposi e sicurezza (HARD – mai violati dal generatore)', [
+    ['minRestHours', 'Riposo minimo tra due turni (ore)', 'num', 'Tempo effettivo tra fine di un turno e inizio del successivo, anche oltre la mezzanotte.'],
+    ['nightRestHours', 'Riposo dopo una notte (ore dalla fine del turno)', 'num', 'Smonto + riposo. Con notte 22–06 e 24 h il primo turno possibile parte alle 06:00 del secondo giorno dopo l\'inizio della notte.'],
+    ['nightRestFullDays', 'Giorni solari completi liberi dopo il giorno di smonto', 'num', '0 = nessuno. 1 = il giorno successivo allo smonto deve essere interamente libero.'],
+    ['unavailSpill', 'Indisponibilità di giornata intera valida anche per la parte di notte oltre mezzanotte', 'bool', 'Se attivo, chi è indisponibile tutto il giorno X non può finire una notte il giorno X.'],
+    ['maxConsecutiveDays', 'Massimo giorni consecutivi lavorati (0 = nessun limite)', 'num'],
+    ['maxConsecutiveDaysHard', '…trattalo come HARD (altrimenti è una forte preferenza)', 'bool'],
+    ['maxHoursWeek', 'Massimo ore settimanali (0 = nessun limite, HARD)', 'num'],
+    ['maxNightsWeek', 'Massimo notti a settimana (0 = nessun limite)', 'num'],
+    ['maxNightsWeekHard', '…trattalo come HARD (altrimenti SOFT con penalità)', 'bool'],
+  ]],
+  ['Equità (SOFT, priorità 3–5)', [
+    ['fairnessTolerance', 'Tolleranza sulla media (punti/turni) senza penalità', 'num', 'Scostamenti entro questa soglia non sono penalizzati; lascia spazio alle regole di priorità inferiore.'],
+    ['fairnessHistoryWeeks', 'Settimane precedenti incluse nel calcolo del carico', 'num'],
+    ['w.fairTotal', 'Peso equità punti totali', 'num'], ['w.fairType', 'Peso equità per tipologia (mattine, pomeriggi…)', 'num'],
+    ['w.fairNight', 'Peso equità notti', 'num'], ['weekendBonus', 'Punti aggiuntivi per turno nel weekend', 'num'],
+    ['w.fairWeekend', 'Peso equità weekend', 'num'], ['weekendWindowWeeks', 'Finestra «almeno un weekend libero» (settimane)', 'num'],
+    ['w.noFreeWeekend', 'Penalità: nessun weekend libero nella finestra', 'num'], ['maxConsecutiveWeekends', 'Massimo weekend consecutivi lavorati', 'num'], ['w.weekendConsec', 'Penalità per weekend consecutivo in eccesso', 'num'],
+    ['w.nightsOverMax', 'Penalità per notte oltre il massimo settimanale (se SOFT)', 'num'],
+  ]],
+  ['Continuità e preferenze secondarie (SOFT, priorità 6–7)', [
+    ['w.continuity', 'Peso continuità sui servizi marcati (es. UTI)', 'num', 'Penalità per ogni cambio persona rispetto al giorno precedente.'],
+    ['w.dayToNight', 'Penalità Pomeriggio → Notte (turno diurno seguito da notte)', 'num'], ['w.dayToNightHours', 'Soglia intervallo (ore) sotto cui si applica', 'num', 'Più l\'intervallo è breve, più la penalità cresce.'],
+    ['softConsecutiveDays', 'Giorni consecutivi preferiti al massimo (0 = nessuno)', 'num'], ['w.consecDays', 'Penalità per giorno consecutivo in eccesso', 'num'],
+    ['maxConsecutiveNights', 'Notti consecutive preferite al massimo (0 = nessuno)', 'num'], ['w.consecNights', 'Penalità per notte consecutiva in eccesso', 'num'],
+  ]],
+  ['Ottimizzatore', [
+    ['optimizer.restarts', 'Numero di tentativi (restart)', 'num'], ['optimizer.iterations', 'Iterazioni di ricerca locale per tentativo', 'num'],
+    ['optimizer.timeMs', 'Tempo massimo (ms)', 'num'], ['optimizer.seed', 'Seme casuale (risultato riproducibile)', 'num'],
+  ]],
+];
+function getPath(o, p) { return p.split('.').reduce((a, k) => a[k], o); }
+function setPath(o, p, v) { const ks = p.split('.'); const l = ks.pop(); ks.reduce((a, k) => a[k], o)[l] = v; }
+function viewRules() {
+  const st = S.settings;
+  const form = RULE_GROUPS.map(([title, items]) => h('div', { class: 'card' }, h('h3', null, title), h('div', { class: 'grid2' }, items.map(([path, label, type, hint]) => {
+    if (type === 'bool') return h('div', null, chk(label, getPath(st, path), e => { setPath(st, path, e.target.checked); persist(); revalidateSoft(); }).el);
+    return field(label, h('input', { type: 'number', step: 'any', min: 0, value: getPath(st, path), onchange: e => { const v = parseFloat(e.target.value); setPath(st, path, isNaN(v) || v < 0 ? getPath(defaultSettings(), path) : v); e.target.value = getPath(st, path); persist(); revalidateSoft(); } }), hint);
+  }))));
+  return h('div', null, h('h2', null, 'Regole di programmazione'), h('p', { class: 'lead' }, 'Nessuna regola è fissata nel codice: dipende da contratto, normativa e organizzazione. Le modifiche valgono per la prossima generazione e per la validazione.'),
+    h('div', { class: 'card' }, h('h3', null, 'Definizione di weekend'), ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((d, i) => chk(d, st.weekendDays.includes(i), e => { st.weekendDays = e.target.checked ? [...new Set([...st.weekendDays, i])].sort() : st.weekendDays.filter(x => x !== i); persist(); }).el), h('div', { class: 'hint' }, 'Un turno è «di weekend» se inizia in uno di questi giorni.')),
+    h('div', { class: 'card' }, h('h3', null, 'Peso dei turni (punti) – es. «peso della notte»'), h('table', { class: 't' }, h('tbody', null, S.shiftTypes.map(t => h('tr', null, h('td', null, h('i', { class: 'dot', style: { background: t.color } }), ' ', t.name, t.night ? ' 🌙' : ''), h('td', null, h('input', { type: 'number', step: 0.5, min: 0, value: t.points, onchange: e => { t.points = parseFloat(e.target.value) || 0; persist(); } }), ' punti')))))),
+    form, h('div', { class: 'row' }, h('button', { class: 'btn danger', onclick: async () => { if (await confirmBox('Ripristinare tutte le regole ai valori iniziali?', 'Ripristina', true)) { S.settings = defaultSettings(); persist(); render(); toast('Regole ripristinate.', 'ok'); } } }, 'Ripristina regole iniziali')));
+}
+function revalidateSoft() { /* la validazione viene rieseguita al prossimo render */ }
+
+/* ===================================================================
+   VISTA: DATI (import / export / reset)
+   =================================================================== */
+function download(name, text, type) { const a = h('a', { href: URL.createObjectURL(new Blob([text], { type: type || 'application/json' })), download: name }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+function viewData() {
+  const fileIn = h('input', { type: 'file', accept: '.json,application/json', style: { display: 'none' }, onchange: async e => {
+    const f = e.target.files[0]; if (!f) return; e.target.value = '';
+    try { const text = await f.text(); const ns = Store.parseImport(text);
+      if (!(await confirmBox(`Importare «${f.name}»? Verranno SOVRASCRITTI tutti i dati attuali (${S.people.length} persone, ${S.services.length} servizi, ${Object.keys(S.weeks).length} settimane) con: ${ns.people.length} persone, ${ns.services.length} servizi, ${Object.keys(ns.weeks).length} settimane.`, 'Sovrascrivi', true))) return;
+      S = ns; persist(); render(); toast('Configurazione importata.', 'ok');
+    } catch (err) { toast('Importazione non riuscita: ' + err.message, 'err'); } } });
+  const size = (() => { try { return Math.round(JSON.stringify(S).length / 1024); } catch (e) { return '?'; } })();
+  return h('div', null, h('h2', null, 'Dati'), h('p', { class: 'lead' }, 'Il salvataggio nel browser (localStorage) è automatico. Esporta un file JSON per backup o per spostare i dati su un altro computer.'),
+    h('div', { class: 'card' }, h('h3', null, 'Nome della programmazione'), h('input', { type: 'text', value: S.meta.name, style: { width: '320px' }, oninput: e => { S.meta.name = e.target.value; persist(); } }), h('span', { class: 'hint' }, ' compare nel titolo e nel PDF')),
+    h('div', { class: 'card' }, h('h3', null, 'Esporta / Importa'), h('div', { class: 'row' },
+      h('button', { class: 'btn primary', onclick: () => { download(`turni_backup_${U.today()}.json`, Store.exportJSON(S)); toast('File JSON esportato.', 'ok'); } }, '⬇ Esporta configurazione (JSON)'),
+      h('button', { class: 'btn', onclick: () => fileIn.click() }, '⬆ Importa configurazione (JSON)'), fileIn),
+      h('p', { class: 'hint' }, 'Il file contiene personale, servizi, tipologie di turno, regole, indisponibilità e tutte le programmazioni settimanali.')),
+    h('div', { class: 'card' }, h('h3', null, 'Archivio locale'), h('p', null, `${S.people.length} persone · ${S.services.length} servizi · ${S.shiftTypes.length} tipologie di turno · ${S.unavail.length} indisponibilità · ${Object.keys(S.weeks).length} settimane salvate · ~${size} KB`),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => { const ws = curWs(); const w = S.weeks[ws]; if (!w) return; confirmBox('Eliminare la programmazione della settimana corrente (assegnazioni, note e personalizzazioni)?', 'Elimina', true).then(ok => { if (ok) { delete S.weeks[ws]; persist(); render(); toast('Settimana eliminata.', 'ok'); } }); } }, 'Elimina settimana corrente'),
+        h('button', { class: 'btn danger', onclick: async () => { if (await confirmBox('Cancellare TUTTI i dati e ripartire dalla configurazione iniziale? L\'operazione non è reversibile (esporta prima un backup).', 'Cancella tutto', true)) { S = normalizeState(null); persist(); render(); toast('Dati reimpostati.', 'ok'); } } }, 'Reimposta tutto'))));
+}
+
+/* ===================================================================
+   VISTA: GUIDA
+   =================================================================== */
+function viewHelp() {
+  const sec = (t, ...c) => [h('h3', null, t), ...c];
+  return h('div', { class: 'help' }, h('h2', null, 'Guida rapida'),
+    sec('1. Preparazione', h('ol', null, h('li', null, h('b', null, 'Turni'), ': verifica orari, durata, punti e flag «notturno».'), h('li', null, h('b', null, 'Servizi'), ': definisci i servizi e le persone richieste per giorno/turno. Spunta «continuità» per i servizi (es. UTI) dove vuoi la stessa persona su più giorni.'), h('li', null, h('b', null, 'Personale'), ': inserisci le persone, i servizi abilitati e l\'abilitazione alle notti.'), h('li', null, h('b', null, 'Indisponibilità'), ': inserisci assenze per giorno intero o per turno.'), h('li', null, h('b', null, 'Regole'), ': imposta riposi, limiti e pesi secondo il vostro contratto.'))),
+    sec('2. Generazione', h('p', null, 'In «Programmazione» scegli la settimana (parte sempre di lunedì) e premi ', h('code', null, 'Genera turni'), '. Se non è possibile coprire tutto, l\'app mostra «PROGRAMMAZIONE INCOMPLETA» con turni scoperti, persone escluse e motivo. I vincoli non vengono mai rilassati in silenzio.')),
+    sec('3. Modifica manuale e blocco', h('p', null, 'Clicca una cella: scegli la persona, vedi subito ✔/▲/✖ per ciascun candidato e i messaggi di violazione. La modifica è sempre consentita ma le violazioni restano evidenziate. Con «Blocca» l\'assegnazione diventa fissa: «Genera turni» non la modifica (ma segnala se è in conflitto).')),
+    sec('4. Settimane', h('p', null, 'Puoi conservare più settimane. La generazione tiene conto delle 2 settimane vicine (notti della domenica, riposi, giorni consecutivi, continuità UTI) e dello storico recente per l\'equità. «Configura settimana» permette di disattivare/aggiungere servizi o cambiare le persone richieste solo per quella settimana.')),
+    sec('5. Dati', h('p', null, 'Tutto è salvato automaticamente nel browser. Usa «Dati» per esportare/importare un JSON di backup. «Esporta PDF» crea un A4 orizzontale stampabile (leggibile anche in bianco e nero).')),
+    sec('Vincoli HARD (mai violati dal generatore)', h('ul', null, ['Indisponibilità (giornata intera o per turno, anche su più giorni)', 'Servizio non abilitato / notte non abilitata / persona non attiva', 'Nessuna doppia assegnazione sovrapposta nel tempo', 'Riposo minimo tra due turni (calcolato su ore effettive, anche oltre la mezzanotte)', 'Riposo post-notte (ore e, se configurato, giorni liberi) – anche tra una settimana e la successiva', 'Massimo giorni consecutivi, massimo ore settimanali, massimo notti (se configurati come HARD)', 'Assegnazioni bloccate (considerate fisse)'].map(x => h('li', null, x)))),
+    sec('Preferenze SOFT (ordinate per priorità, rigide)', h('ol', { start: 3 }, ['Equità del carico (punti pesati, mattine, pomeriggi) con tolleranza e storico', 'Equità delle notti', 'Equità dei weekend, weekend consecutivi, almeno un weekend libero', 'Continuità sui servizi marcati (UTI)', 'Preferenze secondarie: Pomeriggio→Notte ravvicinato, giorni/notti consecutive in eccesso'].map(x => h('li', null, x)))),
+    sec('Algoritmo', h('p', null, 'Costruzione con ordine «più vincolato prima» (MRV) e scelta del candidato di minima penalità; riparazione dei posti scoperti con catene di riassegnazione (cammini aumentanti); ricerca locale con mosse di riassegnazione, scambio e scambio di blocchi su più giorni; più restart con seme controllato. Il confronto tra soluzioni è lessicografico: (violazioni HARD, turni scoperti, P3, P4, P5, P6, P7).')));
+}
+
+/* ===================================================================
+   ESPORTAZIONE PDF
+   =================================================================== */
+function scheduleTable() {
+  const ws = curWs(), week = S.weeks[ws] || emptyWeek(), cells = new Map(demandCells(S, ws).map(c => [c.key, c]));
+  const head = ['Servizio', 'Turno', ...DOW_SHORT.map((d, i) => `${d} ${U.fmtShort(U.addDays(ws, i))}`)];
+  const rows = [], meta = [];
+  for (const sv of weekServices(S, ws)) for (const t of S.shiftTypes) {
+    if (!(sv.req[t.id] || []).some(n => n > 0)) continue;
+    const row = [sv.name + (sv.temp ? ' (temp.)' : ''), `${t.name}\n${t.start}–${t.end}`]; const m = [];
+    for (let d = 0; d < 7; d++) {
+      const date = U.addDays(ws, d), key = cellKey(sv.id, date, t.id), c = cells.get(key);
+      if (!c) { row.push('–'); m.push('off'); continue; }
+      const ass = week.assignments.filter(a => a.svc === sv.id && a.date === date && a.shift === t.id);
+      const lines = ass.map(a => { const bi = V.byAssign[a.id]; return personName(personById(a.person)) + (a.locked ? ' (B)' : '') + (bi && bi.hard.length ? ' (!)' : ''); });
+      for (let k = ass.length; k < c.req; k++) lines.push('** SCOPERTO **');
+      row.push(lines.join('\n')); m.push(ass.length < c.req ? 'unc' : 'ok');
+    }
+    rows.push(row); meta.push({ shiftIdx: S.shiftTypes.indexOf(t), cells: m });
+  }
+  return { head, rows, meta };
+}
+function exportPDF() {
+  const ws = curWs(); revalidate();
+  if (!V.required) { toast('Nessun turno richiesto: niente da esportare.', 'warn'); return; }
+  const go = () => {
+    const week = S.weeks[ws] || emptyWeek(), T = scheduleTable();
+    const incomplete = !V.complete;
+    if (!(window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable)) { printFallback(T); return; }
+    const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(S.meta.name, 14, 14);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text(`Settimana dal ${U.fmtDate(ws)} al ${U.fmtDate(U.addDays(ws, 6))}`, 14, 20);
+    doc.setFontSize(8); doc.text('Generato il ' + new Date().toLocaleString('it-IT'), W - 14, 14, { align: 'right' });
+    let y = 25;
+    if (incomplete || V.hardCount) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setDrawColor(0); doc.setLineWidth(0.6);
+      const txt = (incomplete ? `PROGRAMMAZIONE INCOMPLETA – ${V.uncoveredCount} turni scoperti` : '') + (V.hardCount ? (incomplete ? ' · ' : '') + `${V.hardCount} conflitti vincoli obbligatori` : '');
+      doc.rect(14, y - 4.5, W - 28, 7); doc.text(txt, 16, y); y += 7;
+    }
+    const fills = [[247, 247, 247], [222, 222, 222], [196, 196, 196]];
+    doc.autoTable({
+      startY: y, head: [T.head], body: T.rows, theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1.6, lineColor: [0, 0, 0], lineWidth: 0.25, textColor: [0, 0, 0], valign: 'middle' },
+      headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], halign: 'center' },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 26 }, 1: { cellWidth: 26 } },
+      didParseCell: d => {
+        if (d.section !== 'body') return; const m = T.meta[d.row.index];
+        if (d.column.index === 1) { d.cell.styles.fillColor = fills[Math.min(2, m.shiftIdx)]; d.cell.styles.fontStyle = 'bold'; }
+        if (d.column.index >= 2) { const k = m.cells[d.column.index - 2]; if (k === 'off') d.cell.styles.fillColor = [235, 235, 235]; else if (k === 'unc') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.lineWidth = 0.7; } }
+      },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.text('Legenda: (B) = assegnazione bloccata · (!) = conflitto con un vincolo obbligatorio · ** SCOPERTO ** = posto non coperto · – = turno non richiesto', 14, y); y += 5;
+    if (V.uncovered.length) {
+      doc.autoTable({ startY: y, head: [['Turni scoperti', 'Motivo']], body: V.uncovered.map(u => [u.title, u.msg + (u.excluded.length ? ' Escluse: ' + u.excluded.map(e => e.people.join(', ') + ' (' + e.reason + ')').join('; ') : '')]), theme: 'grid', styles: { fontSize: 8, cellPadding: 1.5, lineColor: [0, 0, 0], lineWidth: 0.2, textColor: 0 }, headStyles: { fillColor: [30, 30, 30], textColor: 255 }, columnStyles: { 0: { cellWidth: 70 } } });
+      y = doc.lastAutoTable.finalY + 5;
+    }
+    if (V.hard.length) {
+      doc.autoTable({ startY: y, head: [['Conflitti con vincoli obbligatori']], body: V.hard.map(i => [i.msg]), theme: 'grid', styles: { fontSize: 8, cellPadding: 1.5, lineColor: [0, 0, 0], lineWidth: 0.2, textColor: 0 }, headStyles: { fillColor: [30, 30, 30], textColor: 255 } });
+      y = doc.lastAutoTable.finalY + 5;
+    }
+    if (week.notes && week.notes.trim()) {
+      doc.autoTable({ startY: y, head: [['Note']], body: [[week.notes.trim()]], theme: 'grid', styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.2, textColor: 0 }, headStyles: { fillColor: [30, 30, 30], textColor: 255 } });
+    }
+    const n = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(80); doc.text(`Pagina ${i} di ${n}`, W - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' }); }
+    doc.save(`turni_${ws}.pdf`); toast('PDF esportato.', 'ok');
+  };
+  if (V.hardCount || V.uncoveredCount) confirmBox(`La programmazione contiene ${V.uncoveredCount} turni scoperti e ${V.hardCount} conflitti HARD. Esportare comunque? (il PDF li segnalerà)`, 'Esporta comunque', false).then(ok => { if (ok) go(); }); else go();
+}
+function printFallback(T) {
+  const ws = curWs(), pa = document.getElementById('printArea');
+  pa.replaceChildren(h('h1', null, S.meta.name), h('div', { class: 'pm' }, `Settimana dal ${U.fmtDate(ws)} al ${U.fmtDate(U.addDays(ws, 6))}`), V.complete ? null : h('div', { class: 'inc' }, `PROGRAMMAZIONE INCOMPLETA – ${V.uncoveredCount} turni scoperti`),
+    h('table', null, h('thead', null, h('tr', null, T.head.map(x => h('th', null, x)))), h('tbody', null, T.rows.map((r, i) => h('tr', null, r.map((c, j) => h('td', { class: j === 1 ? 's' + Math.min(2, T.meta[i].shiftIdx) : '', style: { whiteSpace: 'pre-line', fontWeight: j < 2 ? 'bold' : 'normal' } }, c)))))),
+    V.uncovered.length ? h('div', null, h('h3', null, 'Turni scoperti'), V.uncovered.map(u => h('div', null, '• ' + u.title + ': ' + u.msg))) : null,
+    (S.weeks[ws] && S.weeks[ws].notes) ? h('div', null, h('h3', null, 'Note'), h('div', { style: { whiteSpace: 'pre-line' } }, S.weeks[ws].notes)) : null,
+    h('div', { class: 'pm' }, 'Legenda: (B) bloccata · (!) conflitto · ** SCOPERTO ** posto non coperto'));
+  toast('Libreria PDF non raggiungibile: si apre la stampa del browser (scegli «Salva come PDF», A4 orizzontale).', 'warn');
+  setTimeout(() => window.print(), 300);
+}
+
+/* ------------------------------------------------------------- avvio */
+render();
+</script>
+</body>
+</html>
