@@ -1793,8 +1793,9 @@ function viewPlanner() {
       { icon: 'undo', label: 'Annulla ultima azione', hint: 'Ctrl Z', disabled: !undoStack.length, onClick: undoLast },
       '-', { header: month ? 'Configura settimana' : 'Settimana' },
       ...(month ? periodWeeks().map(w => ({ icon: 'sliders', label: fmtRange(w, U.addDays(w, 6)), onClick: () => openWeekConfig(w) })) : [{ icon: 'settings', label: 'Configura settimana…', onClick: () => openWeekConfig(S.ui.ws) }]),
-      '-', { header: 'Esporta' },
-      { icon: 'file', label: 'PDF della settimana', onClick: () => exportPDF('week') }, { icon: 'file', label: 'PDF del mese', onClick: () => exportPDF('month') },
+      '-', { header: 'Esporta PDF' },
+      { icon: 'file', label: 'Settimana · per servizio', onClick: () => exportPDF('week', 'service') }, { icon: 'file', label: 'Settimana · per persona', onClick: () => exportPDF('week', 'people') },
+      { icon: 'file', label: 'Mese · per servizio', onClick: () => exportPDF('month', 'service') }, { icon: 'file', label: 'Mese · per persona', onClick: () => exportPDF('month', 'people') },
     ]) }, ic('more', 18))];
   const toolbar = h('div', { class: 'toolbar' },
     periodNav(),
@@ -2132,86 +2133,112 @@ document.addEventListener('keydown', e => {
 /* =====================================================================
    ESPORTAZIONE PDF
    ===================================================================== */
-function weekTableData(ws) {
-  const V = getV(ws), week = S.weeks[ws] || emptyWeek(), cells = new Map(demandCells(S, ws).map(c => [c.key, c]));
-  const head = ['Servizio', 'Turno', ...DOW_SHORT.map((d, i) => `${d} ${U.fmtShort(U.addDays(ws, i))}`)];
+/* contesto comune dell'esportazione: periodo, conteggi, elenchi e note */
+function pdfContext(kind) {
+  const month = kind === 'month', weeks = month ? monthWeeks(S.ui.month) : [S.ui.ws];
+  const days = month ? monthDays(S.ui.month) : Array.from({ length: 7 }, (_, i) => U.addDays(S.ui.ws, i)), dset = new Set(days);
+  const ctx = { month, weeks, days, dset, Vs: weeks.map(getV), nUnc: 0, nHard: 0, uncList: [], hardList: [], required: 0 };
+  ctx.Vs.forEach((V, i) => {
+    demandCells(S, weeks[i]).filter(c => dset.has(c.date)).forEach(c => { ctx.required += c.req; });
+    V.uncovered.filter(u => dset.has(u.cell.date)).forEach(u => { ctx.uncList.push(u); ctx.nUnc += u.missing; });
+    V.hard.filter(x => !month || (x.cells && x.cells.some(k => dset.has(k.split('|')[1])))).forEach(x => { ctx.hardList.push(x); ctx.nHard++; });
+  });
+  ctx.notes = weeks.map(w => ({ w, t: ((S.weeks[w] && S.weeks[w].notes) || '').trim() })).filter(x => x.t).map(x => month ? `${fmtRange(x.w, U.addDays(x.w, 6))}: ${x.t}` : x.t);
+  ctx.title = month ? monthLabel(S.ui.month) : `Settimana dal ${U.fmtDate(S.ui.ws)} al ${U.fmtDate(U.addDays(S.ui.ws, 6))}`;
+  return ctx;
+}
+/* tabella PER SERVIZIO: righe = servizio+turno, colonne = giorni, celle = persone assegnate */
+function serviceTableData(ctx, days) {
+  const cellMaps = {}, svcs = new Map(), head = ['Servizio', 'Turno', ...days.map(d => `${DOW_SHORT[U.dow(d)]}\n${U.fmtShort(d)}`)];
+  ctx.weeks.forEach(ws => { cellMaps[ws] = new Map(demandCells(S, ws).map(c => [c.key, c])); weekServices(S, ws).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { name: sv.name + (sv.temp ? ' (temp.)' : ''), rows: new Set() }); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) svcs.get(sv.id).rows.add(t.id); }); }); });
   const rows = [], meta = [];
-  for (const sv of weekServices(S, ws)) for (const t of S.shiftTypes) {
-    if (!(sv.req[t.id] || []).some(n => n > 0)) continue;
-    const row = [sv.name + (sv.temp ? ' (temp.)' : ''), `${t.name}\n${t.start}–${t.end}`], m = [];
-    for (let d = 0; d < 7; d++) {
-      const date = U.addDays(ws, d), c = cells.get(cellKey(sv.id, date, t.id));
-      if (!c) { row.push('–'); m.push('off'); continue; }
-      const ass = week.assignments.filter(a => a.svc === sv.id && a.date === date && a.shift === t.id);
+  for (const [id, sv] of svcs) for (const t of S.shiftTypes) {
+    if (!sv.rows.has(t.id)) continue;
+    const row = [sv.name, `${t.name}\n${t.start}–${t.end}`], m = [];
+    days.forEach(d => {
+      const ws = U.monday(d), V = ctx.Vs[ctx.weeks.indexOf(ws)], week = S.weeks[ws] || emptyWeek(), c = cellMaps[ws].get(cellKey(id, d, t.id));
+      if (!c) { row.push('–'); m.push('off'); return; }
+      const ass = week.assignments.filter(a => a.svc === id && a.date === d && a.shift === t.id);
       const lines = ass.map(a => { const bi = V.byAssign[a.id]; return personName(personById(a.person)) + (a.locked ? ' (B)' : '') + (bi && bi.hard.length ? ' (!)' : ''); });
       for (let k = ass.length; k < c.req; k++) lines.push('** SCOPERTO **');
       row.push(lines.join('\n')); m.push(ass.length < c.req ? 'unc' : 'ok');
-    }
-    rows.push(row); meta.push({ shiftIdx: S.shiftTypes.indexOf(t), cells: m });
+    });
+    rows.push(row); meta.push({ shiftIdx: S.shiftTypes.indexOf(t), night: !!t.night, cells: m });
   }
-  return { head, rows, meta, V };
+  return { head, rows, meta };
 }
-function monthTableData(ym) {
-  const days = monthDays(ym), dset = new Set(days), codes = shiftCodes(S), weeks = monthWeeks(ym);
-  const by = {}, unc = {};
-  let hard = 0, uncovered = 0; const uncList = [];
-  weeks.forEach(ws => { const V = getV(ws), w = S.weeks[ws];
-    if (w) for (const a of w.assignments) if (dset.has(a.date)) { const bi = V.byAssign[a.id]; ((by[a.person] || (by[a.person] = {}))[a.date] || (by[a.person][a.date] = [])).push(codes[a.shift] + (a.locked ? '*' : '') + (bi && bi.hard.length ? '!' : '')); }
-    V.uncovered.filter(u => dset.has(u.cell.date)).forEach(u => { unc[u.cell.date] = (unc[u.cell.date] || 0) + u.missing; uncovered += u.missing; uncList.push(u); });
-    hard += V.hard.filter(i => i.cells && i.cells.some(k => dset.has(k.split('|')[1]))).length; });
-  const head = ['Persona', ...days.map(d => `${DOW_SHORT[U.dow(d)][0]}\n${+d.slice(8)}`)];
-  const rows = []; const people = S.people.filter(p => p.active !== false || by[p.id]).sort((a, b) => personName(a).localeCompare(personName(b)));
-  if (uncovered) rows.push(['DA COPRIRE', ...days.map(d => unc[d] ? String(unc[d]) : '')]);
-  people.forEach(p => { const un = {}; S.unavail.filter(e => e.person === p.id).forEach(e => days.forEach(d => { if (d >= e.from && d <= e.to && (!e.shifts || !e.shifts.length)) un[d] = true; })); rows.push([personName(p), ...days.map(d => (by[p.id] && by[p.id][d] ? by[p.id][d].join('/') : un[d] ? 'x' : ''))]); });
-  return { head, rows, days, uncovered, hard, uncList, hasUnc: !!uncovered };
+/* tabella PER PERSONA: righe = persone, colonne = giorni, celle = sigla del turno (e servizio se c'è spazio) */
+function peopleTableData(ctx) {
+  const days = ctx.days, codes = shiftCodes(S), rich = days.length <= 7, by = {}, unc = {};
+  ctx.weeks.forEach((ws, i) => { const V = ctx.Vs[i], w = S.weeks[ws];
+    if (w) for (const a of w.assignments) if (ctx.dset.has(a.date)) { const bi = V.byAssign[a.id], sv = weekServices(S, ws).find(x => x.id === a.svc); ((by[a.person] || (by[a.person] = {}))[a.date] || (by[a.person][a.date] = [])).push(codes[a.shift] + (rich && sv ? ' ' + svcAbbr(sv.name) : '') + (a.locked ? '*' : '') + (bi && bi.hard.length ? '!' : '')); }
+    V.uncovered.filter(u => ctx.dset.has(u.cell.date)).forEach(u => { unc[u.cell.date] = (unc[u.cell.date] || 0) + u.missing; }); });
+  const head = ['Persona', ...days.map(d => rich ? `${DOW_SHORT[U.dow(d)]}\n${U.fmtShort(d)}` : `${DOW_SHORT[U.dow(d)][0]}\n${+d.slice(8)}`)];
+  const rows = [], people = S.people.filter(p => p.active !== false || by[p.id]).sort((a, b) => personName(a).localeCompare(personName(b)));
+  if (ctx.nUnc) rows.push(['DA COPRIRE', ...days.map(d => unc[d] ? String(unc[d]) : '')]);
+  people.forEach(p => { const un = {}; S.unavail.filter(e => e.person === p.id).forEach(e => days.forEach(d => { if (d >= e.from && d <= e.to && (!e.shifts || !e.shifts.length)) un[d] = true; })); rows.push([personName(p), ...days.map(d => (by[p.id] && by[p.id][d] ? by[p.id][d].join('\n') : un[d] ? 'x' : ''))]); });
+  return { head, rows, rich };
 }
-function exportPDF(kind) {
-  const month = kind === 'month', ws = S.ui.ws;
-  const prepared = month ? monthTableData(S.ui.month) : weekTableData(ws);
-  const nUnc = month ? prepared.uncovered : prepared.V.uncoveredCount, nHard = month ? prepared.hard : prepared.V.hardCount;
-  if (!month && !prepared.V.required) { toast('Nessun turno richiesto: niente da esportare.', 'warning'); return; }
+const pdfFx = t => String(t).replace(/→/g, '->').replace(/≤/g, '<=').replace(/✔|✖|▲/g, '');
+function exportPDF(kind, group) {
+  group = group || S.ui.group || 'people';
+  const ctx = pdfContext(kind), month = ctx.month;
+  if (!ctx.required) { toast('Nessun turno richiesto nel periodo: niente da esportare.', 'warning'); return; }
   const run = () => {
-    if (!(window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable)) { printFallback(prepared, month); return; }
-    const { jsPDF } = window.jspdf, doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }), W = doc.internal.pageSize.getWidth();
-    const title = S.meta.name, sub = month ? monthLabel(S.ui.month) : `Settimana dal ${U.fmtDate(ws)} al ${U.fmtDate(U.addDays(ws, 6))}`;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(title, 14, 14); doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text(sub, 14, 20);
+    const prepared = group === 'service'
+      ? { group, tables: (month ? [ctx.days.slice(0, Math.ceil(ctx.days.length / 2)), ctx.days.slice(Math.ceil(ctx.days.length / 2))] : [ctx.days]).map(d => serviceTableData(ctx, d)) }
+      : { group, people: peopleTableData(ctx) };
+    if (!(window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable)) { printFallback(prepared, ctx); return; }
+    const { jsPDF } = window.jspdf, doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }), W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    const sub = ctx.title + (group === 'service' ? ' · per servizio' : ' · per persona');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(S.meta.name, 14, 14); doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text(sub, 14, 20);
     doc.setFontSize(8); doc.text('Generato il ' + new Date().toLocaleString('it-IT'), W - 14, 14, { align: 'right' });
     let y = 25;
-    if (nUnc || nHard) { doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setDrawColor(0); doc.setLineWidth(0.6); const txt = (nUnc ? `PROGRAMMAZIONE INCOMPLETA - ${nUnc} turni scoperti` : '') + (nHard ? (nUnc ? ' | ' : '') + `${nHard} conflitti con vincoli obbligatori` : ''); doc.rect(14, y - 4.5, W - 28, 7); doc.text(txt, 16, y); y += 7; }
-    const px = t => String(t).replace(/→/g, '->').replace(/≤/g, '<=').replace(/✔|✖|▲/g, ''), dark = { fillColor: [30, 30, 30], textColor: [255, 255, 255] }, grid = { lineColor: [0, 0, 0], lineWidth: 0.2, textColor: [0, 0, 0] };
-    if (month) {
-      const n = prepared.days.length, nameW = 36, dayW = (W - 28 - nameW) / n, codes = shiftCodes(S);
-      doc.autoTable({ startY: y, head: [prepared.head], body: prepared.rows, theme: 'grid', styles: Object.assign({ fontSize: 6.5, cellPadding: 0.9, halign: 'center', valign: 'middle', overflow: 'hidden' }, grid), headStyles: Object.assign({ halign: 'center', fontSize: 6.5 }, dark),
-        columnStyles: Object.assign({ 0: { halign: 'left', fontStyle: 'bold', cellWidth: nameW, fontSize: 7.5 } }, ...prepared.days.map((d, i) => ({ [i + 1]: { cellWidth: dayW } }))),
-        didParseCell: d => { if (d.section === 'head' && d.column.index > 0) { const dt = prepared.days[d.column.index - 1], dw = U.dow(dt); if (dw >= 5 || holidayName(dt)) d.cell.styles.fillColor = [90, 90, 90]; } if (d.section === 'body' && d.column.index > 0) { const dt = prepared.days[d.column.index - 1], dw = U.dow(dt); if (dw >= 5) d.cell.styles.fillColor = [238, 238, 238]; const tx = d.cell.raw; if (tx) { d.cell.styles.fontStyle = 'bold'; if (tx === 'x') { d.cell.styles.fontStyle = 'normal'; d.cell.styles.textColor = [120, 120, 120]; } else if (d.row.raw[0] !== 'DA COPRIRE') { const i0 = S.shiftTypes.findIndex(t => codes[t.id] === tx[0]); d.cell.styles.fillColor = [[255, 255, 255], [222, 222, 222], [190, 190, 190]][Math.min(2, Math.max(0, i0))] || [255, 255, 255]; if (S.shiftTypes[i0] && S.shiftTypes[i0].night) d.cell.styles.fillColor = [190, 190, 190]; } } } if (d.section === 'body' && d.row.raw[0] === 'DA COPRIRE') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [255, 255, 255]; d.cell.styles.lineWidth = 0.5; } } });
+    if (ctx.nUnc || ctx.nHard) { doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setDrawColor(0); doc.setLineWidth(0.6); const txt = (ctx.nUnc ? `PROGRAMMAZIONE INCOMPLETA - ${ctx.nUnc} turni scoperti` : '') + (ctx.nHard ? (ctx.nUnc ? ' | ' : '') + `${ctx.nHard} conflitti con vincoli obbligatori` : ''); doc.rect(14, y - 4.5, W - 28, 7); doc.text(txt, 16, y); y += 7; }
+    const dark = { fillColor: [30, 30, 30], textColor: [255, 255, 255] }, grid = { lineColor: [0, 0, 0], lineWidth: 0.2, textColor: [0, 0, 0] };
+    const shiftFill = (t, i) => (t && t.night ? [190, 190, 190] : [[255, 255, 255], [222, 222, 222], [205, 205, 205]][Math.min(2, Math.max(0, i))]);
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    if (group === 'service') {
+      const fills = [[247, 247, 247], [222, 222, 222], [196, 196, 196]], month2 = prepared.tables.length > 1;
+      prepared.tables.forEach((T, ti) => {
+        if (ti > 0) { doc.addPage(); y = 14; }
+        doc.autoTable({ startY: y, head: [T.head], body: T.rows, theme: 'grid', margin: { left: 14, right: 14 }, styles: Object.assign({ fontSize: month2 ? 6.8 : 8, cellPadding: month2 ? 1.2 : 1.6, valign: 'middle', overflow: 'linebreak' }, grid), headStyles: Object.assign({ halign: 'center', fontSize: month2 ? 7 : 8 }, dark),
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: month2 ? 22 : 26 }, 1: { cellWidth: month2 ? 22 : 26 } },
+          didParseCell: d => { if (d.section === 'head' && d.column.index >= 2) { const dt = ctx.days.find(x => `${DOW_SHORT[U.dow(x)]}\n${U.fmtShort(x)}` === T.head[d.column.index]); if (dt && (U.dow(dt) >= 5 || holidayName(dt))) d.cell.styles.fillColor = [90, 90, 90]; }
+            if (d.section !== 'body') return; const m = T.meta[d.row.index]; if (d.column.index === 1) { d.cell.styles.fillColor = m.night ? [190, 190, 190] : fills[Math.min(2, m.shiftIdx)]; d.cell.styles.fontStyle = 'bold'; }
+            if (d.column.index >= 2) { const k = m.cells[d.column.index - 2]; if (k === 'off') d.cell.styles.fillColor = [235, 235, 235]; else if (k === 'unc') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.lineWidth = 0.7; } } } });
+        y = doc.lastAutoTable.finalY + 5;
+      });
+      doc.setFontSize(8); doc.text('Legenda: (B) = assegnazione bloccata · (!) = conflitto con un vincolo obbligatorio · ** SCOPERTO ** = posto non coperto · – = turno non richiesto' + (month ? ' · colonne scure = weekend/festività' : ''), 14, Math.min(y, H - 14)); y += 6;
+    } else {
+      const T = prepared.people, n = ctx.days.length, rich = T.rich, nameW = rich ? 34 : 36, dayW = (W - 28 - nameW) / n, codes = shiftCodes(S);
+      doc.autoTable({ startY: y, head: [T.head], body: T.rows, theme: 'grid', margin: { left: 14, right: 14 }, styles: Object.assign({ fontSize: rich ? 8 : 6.5, cellPadding: rich ? 1.8 : 0.9, halign: 'center', valign: 'middle', overflow: 'linebreak' }, grid), headStyles: Object.assign({ halign: 'center', fontSize: rich ? 8 : 6.5 }, dark),
+        columnStyles: Object.assign({ 0: { halign: 'left', fontStyle: 'bold', cellWidth: nameW, fontSize: rich ? 9 : 7.5 } }, ...ctx.days.map((d, i) => ({ [i + 1]: { cellWidth: dayW } }))),
+        didParseCell: d => { const dt = d.column.index > 0 ? ctx.days[d.column.index - 1] : null;
+          if (d.section === 'head' && dt && (U.dow(dt) >= 5 || holidayName(dt))) d.cell.styles.fillColor = [90, 90, 90];
+          if (d.section === 'body' && dt) { if (U.dow(dt) >= 5) d.cell.styles.fillColor = [238, 238, 238]; const tx = d.cell.raw;
+            if (d.row.raw[0] === 'DA COPRIRE') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [255, 255, 255]; if (tx) d.cell.styles.lineWidth = 0.5; }
+            else if (tx) { d.cell.styles.fontStyle = 'bold'; if (tx === 'x') { d.cell.styles.fontStyle = 'normal'; d.cell.styles.textColor = [120, 120, 120]; } else { const i0 = S.shiftTypes.findIndex(t => codes[t.id] === tx.split(/[ \n*!]/)[0]); d.cell.styles.fillColor = shiftFill(S.shiftTypes[i0], i0); } } } } });
       y = doc.lastAutoTable.finalY + 5;
       doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-      const legend = 'Sigle: ' + S.shiftTypes.map(t => `${codes[t.id]} = ${t.name} ${t.start}-${t.end}`).join(' · ') + ' · x = indisponibile · * = bloccato · ! = conflitto · colonne grigie = weekend o festività';
-      doc.text(doc.splitTextToSize(legend, W - 28), 14, y); y += 8;
-      doc.text(doc.splitTextToSize('Servizi: il dettaglio per servizio è nel PDF settimanale. Servizi attivi: ' + S.services.filter(s => s.active).map(s => s.name).join(', '), W - 28), 14, y); y += 8;
-    } else {
-      const T = prepared, fills = [[247, 247, 247], [222, 222, 222], [196, 196, 196]];
-      doc.autoTable({ startY: y, head: [T.head], body: T.rows, theme: 'grid', styles: Object.assign({ fontSize: 8, cellPadding: 1.6, valign: 'middle' }, grid), headStyles: Object.assign({ halign: 'center' }, dark), columnStyles: { 0: { fontStyle: 'bold', cellWidth: 26 }, 1: { cellWidth: 26 } },
-        didParseCell: d => { if (d.section !== 'body') return; const m = T.meta[d.row.index]; if (d.column.index === 1) { d.cell.styles.fillColor = fills[Math.min(2, m.shiftIdx)]; d.cell.styles.fontStyle = 'bold'; } if (d.column.index >= 2) { const k = m.cells[d.column.index - 2]; if (k === 'off') d.cell.styles.fillColor = [235, 235, 235]; else if (k === 'unc') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.lineWidth = 0.7; } } } });
-      y = doc.lastAutoTable.finalY + 6; doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.text('Legenda: (B) = assegnazione bloccata · (!) = conflitto con un vincolo obbligatorio · ** SCOPERTO ** = posto non coperto · – = turno non richiesto', 14, y); y += 5;
+      doc.text(doc.splitTextToSize('Sigle: ' + S.shiftTypes.map(t => `${codes[t.id]} = ${t.name} ${t.start}-${t.end}`).join(' · ') + ' · x = indisponibile · * = bloccato · ! = conflitto · colonne grigie = weekend o festività' + (rich ? ' · accanto alla sigla: servizio' : ''), W - 28), 14, y); y += 9;
     }
-    const uncs = month ? prepared.uncList : prepared.V.uncovered, hards = month ? [] : prepared.V.hard;
     const tb = h2 => ({ head: [h2], theme: 'grid', tableWidth: W - 28, margin: { left: 14, right: 14 }, styles: Object.assign({ fontSize: 8, cellPadding: 1.5 }, grid), headStyles: dark });
-    if (uncs.length) { doc.autoTable(Object.assign(tb(['Turni scoperti', 'Motivo']), { startY: y, body: uncs.map(u => [px(u.title), px(u.msg + (u.excluded.length ? ' Escluse: ' + u.excluded.map(e => e.people.join(', ') + ' (' + e.reason + ')').join('; ') : ''))]), columnStyles: { 0: { cellWidth: 62 }, 1: { cellWidth: W - 28 - 62 } } })); y = doc.lastAutoTable.finalY + 5; }
-    if (hards.length) { doc.autoTable(Object.assign(tb(['Conflitti con vincoli obbligatori']), { startY: y, body: hards.map(i => [px(i.msg)]) })); y = doc.lastAutoTable.finalY + 5; }
-    const notes = (month ? monthWeeks(S.ui.month).map(w => (S.weeks[w] && S.weeks[w].notes || '').trim() && `${fmtRange(w, U.addDays(w, 6))}: ${S.weeks[w].notes.trim()}`).filter(Boolean) : [((S.weeks[ws] && S.weeks[ws].notes) || '').trim()].filter(Boolean));
-    if (notes.length) doc.autoTable(Object.assign(tb(['Note']), { startY: y, body: notes.map(n => [n]), styles: Object.assign({ fontSize: 9, cellPadding: 2 }, grid) }));
-    const n = doc.internal.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(80); doc.text(`Pagina ${i} di ${n}`, W - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' }); }
-    doc.save(month ? `turni_${S.ui.month}.pdf` : `turni_${ws}.pdf`); toast('PDF esportato');
+    if (ctx.uncList.length) { doc.autoTable(Object.assign(tb(['Turni scoperti', 'Motivo']), { startY: y, body: ctx.uncList.map(u => [pdfFx(u.title), pdfFx(u.msg + (u.excluded.length ? ' Escluse: ' + u.excluded.map(e => e.people.join(', ') + ' (' + e.reason + ')').join('; ') : ''))]), columnStyles: { 0: { cellWidth: 62 }, 1: { cellWidth: W - 28 - 62 } } })); y = doc.lastAutoTable.finalY + 5; }
+    if (ctx.hardList.length) { doc.autoTable(Object.assign(tb(['Conflitti con vincoli obbligatori']), { startY: y, body: ctx.hardList.map(i => [pdfFx(i.msg)]) })); y = doc.lastAutoTable.finalY + 5; }
+    if (ctx.notes.length) doc.autoTable(Object.assign(tb(['Note']), { startY: y, body: ctx.notes.map(n => [n]), styles: Object.assign({ fontSize: 9, cellPadding: 2 }, grid) }));
+    const np = doc.internal.getNumberOfPages(); for (let i = 1; i <= np; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(80); doc.text(`Pagina ${i} di ${np}`, W - 14, H - 6, { align: 'right' }); }
+    doc.save(`turni_${month ? S.ui.month : S.ui.ws}_${group === 'service' ? 'servizi' : 'persone'}.pdf`); toast('PDF esportato');
   };
-  if (nHard || nUnc) confirmBox(`La programmazione contiene ${nUnc} turni scoperti e ${nHard} conflitti. Il PDF li segnalerà chiaramente.`, 'Esporta comunque', false, 'Esportare il PDF?').then(ok => { if (ok) run(); }); else run();
+  if (ctx.nHard || ctx.nUnc) confirmBox(`La programmazione contiene ${ctx.nUnc} turni scoperti e ${ctx.nHard} conflitti. Il PDF li segnalerà chiaramente.`, 'Esporta comunque', false, 'Esportare il PDF?').then(ok => { if (ok) run(); }); else run();
 }
-function printFallback(T, month) {
-  const pa = document.getElementById('printArea'), ws = S.ui.ws;
-  pa.replaceChildren(h('h1', null, S.meta.name), h('div', { class: 'pm' }, month ? monthLabel(S.ui.month) : `Settimana dal ${U.fmtDate(ws)} al ${U.fmtDate(U.addDays(ws, 6))}`),
-    (month ? T.uncovered : T.V.uncoveredCount) ? h('div', { class: 'inc' }, 'PROGRAMMAZIONE INCOMPLETA – ' + (month ? T.uncovered : T.V.uncoveredCount) + ' turni scoperti') : null,
-    h('table', null, h('thead', null, h('tr', null, T.head.map(x => h('th', { style: { whiteSpace: 'pre-line' } }, x)))), h('tbody', null, T.rows.map((r, i) => h('tr', null, r.map((c, j) => h('td', { class: !month && j === 1 ? 's' + Math.min(2, T.meta[i].shiftIdx) : '', style: { whiteSpace: 'pre-line', fontWeight: j < 2 || month ? 'bold' : 'normal', textAlign: month && j > 0 ? 'center' : 'left', fontSize: month ? '8px' : null } }, c)))))),
-    h('div', { class: 'pm' }, month ? 'Sigle: ' + S.shiftTypes.map(t => `${shiftCodes(S)[t.id]} = ${t.name}`).join(' · ') + ' · x = indisponibile' : 'Legenda: (B) bloccata · (!) conflitto · ** SCOPERTO ** posto non coperto'));
+function printFallback(prepared, ctx) {
+  const pa = document.getElementById('printArea'), tbl = (T, shaded) => h('table', null, h('thead', null, h('tr', null, T.head.map(x => h('th', { style: { whiteSpace: 'pre-line' } }, x)))), h('tbody', null, T.rows.map((r, i) => h('tr', null, r.map((c, j) => h('td', { class: shaded && j === 1 ? 's' + Math.min(2, T.meta[i].shiftIdx) : '', style: { whiteSpace: 'pre-line', fontWeight: j < 2 ? 'bold' : 'normal', fontSize: ctx.month ? '8px' : null, textAlign: !shaded && j > 0 ? 'center' : 'left' } }, c))))));
+  pa.replaceChildren(h('h1', null, S.meta.name), h('div', { class: 'pm' }, ctx.title + (prepared.group === 'service' ? ' · per servizio' : ' · per persona')), ctx.nUnc ? h('div', { class: 'inc' }, `PROGRAMMAZIONE INCOMPLETA – ${ctx.nUnc} turni scoperti`) : null,
+    prepared.group === 'service' ? prepared.tables.map(T => tbl(T, true)) : tbl(prepared.people, false),
+    ctx.uncList.length ? h('div', null, h('h3', null, 'Turni scoperti'), ctx.uncList.map(u => h('div', null, '• ' + u.title + ': ' + u.msg))) : null,
+    ctx.notes.length ? h('div', null, h('h3', null, 'Note'), ctx.notes.map(n => h('div', { style: { whiteSpace: 'pre-line' } }, n))) : null,
+    h('div', { class: 'pm' }, 'Legenda: (B) bloccata · (!) conflitto · ** SCOPERTO ** posto non coperto · x indisponibile'));
   toast('Libreria PDF non raggiungibile: si apre la stampa del browser (scegli «Salva come PDF», A4 orizzontale).', 'warning');
   setTimeout(() => window.print(), 300);
 }
