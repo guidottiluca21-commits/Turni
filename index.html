@@ -311,6 +311,7 @@ table.mg{border-collapse:separate;border-spacing:0;width:100%;table-layout:auto}
 .pill-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill.err{border-color:var(--danger);box-shadow:0 0 0 1px var(--danger)} .pill.soft{border-style:dashed;border-color:var(--warning)} .pill.dim{opacity:.28}
 .pill.missing{background:transparent;color:var(--danger);border:1.5px dashed var(--danger);--c-bg:transparent}
+.mg.wk.wide th.day,.mg.wk.wide td.day{min-width:92px} .mg.wk.wide .pill{font-size:var(--fs-xs);padding:2px 6px} .mg.wk.wide .pill.missing{justify-content:center}
 .mg.wk td.off{background-image:repeating-linear-gradient(135deg,transparent 0 5px,var(--hatch) 5px 6px);opacity:.7}
 .unbadge{display:inline-flex;align-items:center;gap:2px;margin-top:2px;padding:0 5px;height:16px;border-radius:var(--r-full);background:var(--warning-soft);color:var(--warning);font-size:10.5px;font-weight:var(--fw-bold)}
 .legend{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-5);align-items:center;margin-top:var(--sp-3);font-size:var(--fs-xs);color:var(--text-2)}
@@ -415,7 +416,7 @@ table.mg{border-collapse:separate;border-spacing:0;width:100%;table-layout:auto}
   .bottomnav{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--border)}
   .bottomnav button{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:48px;padding:4px 0;border:0;background:none;color:var(--text-3);font-size:10.5px;font-weight:var(--fw-semi)} .bottomnav button.on{color:var(--primary-text)}
   .toolbar{gap:var(--sp-2)} .toolbar .nav{width:100%;justify-content:space-between} .toolbar .nav .period-btn{flex:1;justify-content:center} .toolbar .spacer{display:none}
-  .toolbar .seg{flex:1} .toolbar .seg-b{flex:1;justify-content:center} .toolbar .search{flex:1;min-width:0} .search .kbd{display:none}
+  .toolbar .seg{flex:1 1 40%;min-width:0} .toolbar .seg-b{flex:1;justify-content:center;padding:0 var(--sp-2)} .toolbar .search{flex:1;min-width:0} .search .kbd{display:none}
   .status{padding:var(--sp-3)} .metrics{width:100%;justify-content:space-between} .metric{min-width:0;padding:4px var(--sp-2)} .metric.static{min-width:90px}
   .gridwrap{max-height:calc(100vh - 360px);min-height:300px;border-radius:var(--r-md)}
   .nm{padding:0 var(--sp-2);gap:var(--sp-2)} .nm .avatar,.ptotal,.ptxt .muted,.nm.between .muted{display:none} .pname{font-size:var(--fs-sm)} 
@@ -531,7 +532,7 @@ function defaultState() {
     unavail: [],
     weeks: {},
     settings: defaultSettings(),
-    ui: { view: 'planner', mode: 'month', ws: U.monday(U.today()), month: U.today().slice(0, 7), theme: 'auto', sidebar: 'auto', showSoft: false, filters: { persons: [], shifts: [], services: [], issues: false } },
+    ui: { view: 'planner', mode: 'month', group: 'service', ws: U.monday(U.today()), month: U.today().slice(0, 7), theme: 'auto', sidebar: 'auto', showSoft: false, filters: { persons: [], shifts: [], services: [], issues: false } },
   };
 }
 function emptyWeek() { return { assignments: [], overrides: {}, extra: [], notes: '', lastGen: null }; }
@@ -1574,38 +1575,41 @@ function gridKeys(e) {
   const n = t.closest('table').querySelector(`[data-r="${r}"][data-c="${c}"]`); if (n) { e.preventDefault(); n.focus(); n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
 }
 
-/* ----------------------------------------------------- GRIGLIA SETTIMANA */
-function weekGrid(P) {
-  const ws = P.weeks[0], V = P.Vs[0], week = S.weeks[ws] || emptyWeek(), today = U.today(), f = F();
-  const cellMap = new Map(demandCells(S, ws).map(c => [c.key, c]));
-  const days = periodDays();
+/* ------------------------------------------------ GRIGLIA PER SERVIZIO */
+function serviceGrid(P) {
+  const days = P.days, today = U.today(), f = F(), wide = days.length > 7;
+  const svcs = new Map(), cellMaps = {};
+  P.weeks.forEach(ws => { cellMaps[ws] = new Map(demandCells(S, ws).map(c => [c.key, c]));
+    weekServices(S, ws).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { id: sv.id, name: sv.name, cont: sv.cont, temp: sv.temp, custom: sv.custom, rows: new Set() }); const e = svcs.get(sv.id); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) e.rows.add(t.id); }); }); });
+  const uncMap = {}; P.uncovered.forEach(u => { uncMap[u.key] = u; });
   const unDay = days.map(d => S.people.filter(p => p.active !== false && S.unavail.some(e => e.person === p.id && d >= e.from && d <= e.to)));
-  const head = h('tr', null, nameCell('col', '', 'Servizio e turno'), days.map((d, i) => { const hol = holidayName(d); const un = unDay[i];
+  const head = h('tr', null, nameCell('col', '', 'Servizio e turno'), days.map((d, i) => { const dow = U.dow(d), hol = holidayName(d), un = unDay[i];
     const tip = un.map(p => { const e = S.unavail.find(e => e.person === p.id && d >= e.from && d <= e.to); return personName(p) + ' – ' + (e.shifts && e.shifts.length ? e.shifts.map(s => (shiftById(s) || {}).name).join(', ') : 'tutto il giorno'); }).join('\n');
-    return h('th', { scope: 'col', class: 'day' + (i >= 5 ? ' we' : '') + (d === today ? ' today' : '') + (hol ? ' hol' : ''), title: DOW_LONG[i] + ' ' + U.fmtDate(d) + (hol ? ' · ' + hol : '') }, h('span', { class: 'dow' }, DOW_SHORT[i]), h('span', { class: 'dnum' }, +d.slice(8)), un.length ? h('span', { class: 'unbadge', title: tip, 'aria-label': un.length + ' indisponibili: ' + tip.replace(/\n/g, ', ') }, ic('ban', 10), un.length) : null); }));
+    return h('th', { scope: 'col', class: 'day' + (dow >= 5 ? ' we' : '') + (d === today ? ' today' : '') + (hol ? ' hol' : '') + (dow === 0 ? ' mon' : ''), title: DOW_LONG[dow] + ' ' + U.fmtDate(d) + (hol ? ' · ' + hol : '') }, h('span', { class: 'dow' }, DOW_SHORT[dow]), h('span', { class: 'dnum' }, +d.slice(8)), un.length ? h('span', { class: 'unbadge', title: tip, 'aria-label': un.length + ' indisponibili: ' + tip.replace(/\n/g, ', ') }, ic('ban', 10), un.length) : null); }));
   const body = [];
-  for (const sv of weekServices(S, ws)) {
+  for (const sv of svcs.values()) {
     if (!passSvc(sv.id)) continue;
-    const shRows = S.shiftTypes.filter(t => passShift(t.id) && (sv.req[t.id] || []).some(n => n > 0));
+    const shRows = S.shiftTypes.filter(t => passShift(t.id) && sv.rows.has(t.id));
     if (!shRows.length) continue;
-    body.push(h('tr', { class: 'grp' }, h('th', { class: 'name gh', scope: 'rowgroup' }, h('div', { class: 'nm gnm' }, h('span', { class: 'gname' }, sv.name), sv.temp ? badge('Temporaneo', 'info') : sv.custom ? badge('Personalizzato', 'info') : null, sv.cont ? badge('Continuità', '') : null)), h('td', { class: 'gfill', colSpan: 7 })));
+    body.push(h('tr', { class: 'grp' }, h('th', { class: 'name gh', scope: 'rowgroup' }, h('div', { class: 'nm gnm' }, h('span', { class: 'gname' }, sv.name), sv.temp ? badge('Temporaneo', 'info') : sv.custom ? badge('Personalizzato', 'info') : null, sv.cont ? badge('Continuità', '') : null)), h('td', { class: 'gfill', colSpan: days.length })));
     for (const t of shRows) {
       const tr = h('tr', null, nameCell('row', 'stackv', shiftBadge(t), h('span', { class: 'muted xs tnum' }, t.start + '–' + t.end)));
-      days.forEach((d, i) => {
-        const key = cellKey(sv.id, d, t.id), cell = cellMap.get(key), cls = 'day wc' + (i >= 5 ? ' we' : '') + (d === today ? ' today' : '');
+      days.forEach(d => {
+        const dow = U.dow(d), ws = U.monday(d), key = cellKey(sv.id, d, t.id), cell = cellMaps[ws].get(key), week = S.weeks[ws] || emptyWeek();
+        const cls = 'day wc' + (dow >= 5 ? ' we' : '') + (d === today ? ' today' : '') + (holidayName(d) ? ' hol' : '') + (dow === 0 ? ' mon' : '');
         if (!cell) { tr.append(h('td', { class: cls + ' off' })); return; }
-        const ass = week.assignments.filter(a => a.svc === sv.id && a.date === d && a.shift === t.id), un = V.uncoveredMap[key];
-        const pills = ass.map(a => { const bi = V.byAssign[a.id], p = personById(a.person); const state = bi && bi.hard.length ? 'err' : bi && bi.soft.length && S.ui.showSoft ? 'soft' : '';
+        const ass = week.assignments.filter(a => a.svc === sv.id && a.date === d && a.shift === t.id), un = uncMap[key];
+        const pills = ass.map(a => { const bi = P.byAssign[a.id], p = personById(a.person); const state = bi && bi.hard.length ? 'err' : bi && bi.soft.length && S.ui.showSoft ? 'soft' : '';
           const dim = (f.persons.length && !f.persons.includes(a.person)) || (UIx.search.trim() && p && !personMatches(p));
-          return h('span', { class: 'pill ' + state + (dim ? ' dim' : ''), style: shiftVars(t), title: bi ? [...bi.hard.map(i => '⛔ ' + i.msg), ...bi.soft.map(i => '▲ ' + i.msg)].join('\n') : personName(p) }, h('span', { class: 'pill-n' }, personName(p)), a.locked ? ic('lock', 11) : null, state === 'err' ? ic('alert', 11) : null); });
-        if (un) for (let k = 0; k < un.missing; k++) pills.push(h('span', { class: 'pill missing', title: un.msg }, ic('alert', 11), 'Scoperto'));
-        tr.append(h('td', { class: cls }, h('button', { class: 'wcb', 'aria-label': `${sv.name}, ${DOW_LONG[i]} ${U.fmtShort(d)}, ${t.name}: ${ass.length} di ${cell.req} assegnati. Modifica`, onclick: () => openCellModal(cell, ws) }, pills, h('span', { class: 'wc-plus' }, ic('plus', 13)))));
+          return h('span', { class: 'pill ' + state + (dim ? ' dim' : ''), style: shiftVars(t), title: bi ? [personName(p), ...bi.hard.map(i => '⛔ ' + i.msg), ...bi.soft.map(i => '▲ ' + i.msg)].join('\n') : personName(p) }, h('span', { class: 'pill-n' }, personName(p)), a.locked ? ic('lock', 11) : null, state === 'err' ? ic('alert', 11) : null); });
+        if (un) for (let k = 0; k < un.missing; k++) pills.push(h('span', { class: 'pill missing', title: un.msg }, ic('alert', 11), wide ? '' : 'Scoperto'));
+        tr.append(h('td', { class: cls }, h('button', { class: 'wcb', 'aria-label': `${sv.name}, ${DOW_LONG[dow]} ${U.fmtShort(d)}, ${t.name}: ${ass.length} di ${cell.req} assegnati. Modifica`, onclick: () => openCellModal(cell, ws) }, pills, h('span', { class: 'wc-plus' }, ic('plus', 13)))));
       });
       body.push(tr);
     }
   }
-  if (!body.length) body.push(h('tr', null, h('td', { colSpan: 8 }, emptyState('layers', 'Nessun turno da mostrare', P.anyCells ? 'I filtri attivi nascondono tutti i turni.' : 'Configura i servizi o la settimana per definire i turni richiesti.', P.anyCells ? [h('button', { class: 'btn', onclick: resetFilters }, 'Reset filtri')] : [h('button', { class: 'btn', onclick: () => go('services') }, 'Vai ai servizi')]))));
-  return h('div', { class: 'gridwrap', tabindex: -1 }, h('table', { class: 'mg wk', role: 'grid', 'aria-label': 'Turni della settimana per servizio' }, h('thead', null, head), h('tbody', null, body)));
+  if (!body.length) body.push(h('tr', null, h('td', { colSpan: days.length + 1 }, emptyState('layers', 'Nessun turno da mostrare', P.anyCells ? 'I filtri attivi nascondono tutti i turni.' : 'Configura i servizi o la settimana per definire i turni richiesti.', P.anyCells ? [h('button', { class: 'btn', onclick: resetFilters }, 'Reset filtri')] : [h('button', { class: 'btn', onclick: () => go('services') }, 'Vai ai servizi')]))));
+  return h('div', { class: 'gridwrap', tabindex: -1 }, h('table', { class: 'mg wk' + (wide ? ' wide' : ''), role: 'grid', 'aria-label': 'Turni per servizio' }, h('thead', null, head), h('tbody', null, body)));
 }
 
 /* ------------------------------------------------- azioni rapide (popover) */
@@ -1795,12 +1799,13 @@ function viewPlanner() {
   const toolbar = h('div', { class: 'toolbar' },
     periodNav(),
     h('div', { class: 'spacer' }),
+    seg([{ value: 'people', label: 'Persone' }, { value: 'service', label: 'Servizi' }], S.ui.group, v => { S.ui.group = v; UIx.anim = true; persist(false); render(); }, 'Raggruppa per'),
     seg([{ value: 'month', label: 'Mese' }, { value: 'week', label: 'Settimana' }], S.ui.mode, setMode, 'Vista'),
     h('div', { class: 'search' }, ic('search', 15), h('input', { id: 'q', class: 'input', type: 'search', placeholder: 'Cerca persona', 'aria-label': 'Cerca persona', value: UIx.search, oninput: e => { UIx.search = e.target.value; clearTimeout(UIx._t); UIx._t = setTimeout(() => { render(); const q = document.getElementById('q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 160); } }), h('kbd', { class: 'kbd' }, '/')),
     h('button', { class: 'btn' + (filtersActive() ? ' active' : ''), 'data-pop': 'filters', 'aria-haspopup': 'dialog', onclick: e => openFilters(e.currentTarget) }, ic('filter', 15), h('span', null, 'Filtri'), filtersActive() ? h('span', { class: 'count' }, filtersActive()) : null));
   let content;
   if (!S.people.length) content = h('div', { class: 'card' }, emptyState('users', 'Inizia aggiungendo il personale', 'Servono almeno due passaggi: inserire il personale e (se vuoi) rivedere servizi e turni. Poi un clic su «Genera».', [h('button', { class: 'btn primary', onclick: () => go('people') }, ic('plus', 15), 'Aggiungi personale'), h('button', { class: 'btn', onclick: loadDemoPeople }, 'Carica dati di esempio')]));
-  else content = h('div', { class: 'planner' }, statusBar(P), filterChips(), month ? monthGrid(P) : weekGrid(P), legend());
+  else content = h('div', { class: 'planner' }, statusBar(P), filterChips(), S.ui.group === 'service' ? serviceGrid(P) : monthGrid(P), legend());
   return { title: 'Turni', sub: periodTitle(), actions, body: h('div', null, toolbar, content), grid: true };
 }
 function legend() {
