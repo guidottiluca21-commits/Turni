@@ -316,7 +316,7 @@ table.mg{border-collapse:separate;border-spacing:0;width:100%;table-layout:auto}
 .mg.wk td.off{background-image:repeating-linear-gradient(135deg,transparent 0 5px,var(--hatch) 5px 6px);opacity:.7}
 .unbadge{display:inline-flex;align-items:center;gap:2px;margin-top:2px;padding:0 5px;height:16px;border-radius:var(--r-full);background:var(--warning-soft);color:var(--warning);font-size:10.5px;font-weight:var(--fw-bold)}
 .legend{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-5);align-items:center;margin-top:var(--sp-3);font-size:var(--fs-xs);color:var(--text-2)}
-.legend.inline{margin:0} .lg{display:inline-flex;align-items:center;gap:6px}
+.legend.inline{margin:0} .lgi{display:inline-flex;align-items:center;gap:6px}
 .lg-dot{width:9px;height:9px;border-radius:50%;display:inline-block} .lg-dot.err{background:var(--danger)} .lg-dot.soft{background:var(--warning)}
 
 /* ---------- popover / menu ---------- */
@@ -382,6 +382,66 @@ table.mg{border-collapse:separate;border-spacing:0;width:100%;table-layout:auto}
 .toast-x{border:0;background:transparent;color:inherit;opacity:.55;width:24px;height:24px;border-radius:var(--r-sm);display:grid;place-items:center} .toast-x:hover{opacity:1}
 .toast-msg{min-width:0}
 
+
+/* ---------- indisponibilità: calendario, importazione guidata ---------- */
+.uwrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--sp-4);align-items:start}
+.ucol{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0} .ucol.side{gap:var(--sp-4)}
+.utool{margin-bottom:0} .upers{display:flex;align-items:center;gap:var(--sp-2);min-width:0;flex:1 1 280px;max-width:420px} .upers .select{flex:1;min-width:0}
+.ucard{padding:var(--sp-4)} .unav-nav{margin-bottom:var(--sp-3)}
+.ucal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.uwd{padding:2px 0 4px;text-align:center;font-size:11px;font-weight:var(--fw-semi);text-transform:uppercase;letter-spacing:.06em;color:var(--text-3)} .uwd.we{color:var(--text-3);opacity:.8}
+.ucell{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:2px;min-height:68px;padding:6px 7px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);text-align:left;color:var(--text);transition:border-color var(--dur-fast),background var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
+.ucell.blank{border:0;background:transparent;pointer-events:none;min-height:0}
+.ucell:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border));background:var(--surface-hover)} .ucell:active{transform:scale(.98)}
+.ucell .dn{font-size:var(--fs-md);font-weight:var(--fw-semi);font-variant-numeric:tabular-nums;line-height:1.2;min-width:24px;height:24px;display:inline-grid;place-items:center;border-radius:var(--r-full)}
+.ucell.we{background-image:linear-gradient(var(--we-tint),var(--we-tint))} .ucell.we .dn{color:var(--text-2)}
+.ucell.hol{background-image:linear-gradient(var(--hol-tint),var(--hol-tint))} .ucell .hdot{position:absolute;top:8px;right:8px;margin:0}
+.ucell.today .dn{background:var(--primary);color:var(--on-primary)}
+.ucell.part{border-color:var(--border-strong)}
+.ucell.all{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 40%,var(--border));background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--danger) 9%,transparent) 6px 7px)}
+.ucell.sel{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary);background:var(--primary-soft)}
+.uinds{display:flex;flex-wrap:wrap;gap:3px;min-height:20px}
+.uind{--c-bg:hsl(var(--h,0) calc(var(--chip-s)*var(--k,1)) var(--chip-bg-l));--c-fg:hsl(var(--h,0) calc(var(--chip-s)*var(--k,1)) var(--chip-fg-l));--c-bd:hsl(var(--h,0) calc(var(--chip-s)*var(--k,1)) var(--chip-bd-l));display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 5px;border-radius:var(--r-sm);background:var(--c-bg);color:var(--c-fg);border:1px solid var(--c-bd);font-size:11px;font-weight:var(--fw-semi)}
+.uind.all{--c-bg:var(--danger-soft);--c-fg:var(--danger);--c-bd:color-mix(in srgb,var(--danger) 35%,transparent)} .uind-t{line-height:1}
+.fchip.fasce{height:36px} .fchip.fasce.all.on{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 45%,var(--border));color:var(--danger)}
+.ubar{position:sticky;bottom:var(--sp-3);z-index:6;display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px solid color-mix(in srgb,var(--primary) 35%,var(--border));border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-2);animation:popin var(--dur) var(--ease)}
+.ubar-t{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;font-size:var(--fs-md)}
+.uranges{display:flex;flex-direction:column;gap:var(--sp-2)} .urange{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--r-md);background:var(--surface-2)}
+.uside .grid2{grid-template-columns:1fr 1fr}
+.pad-t{padding-top:var(--sp-2)}
+.wizard .modal-b{padding:0;display:flex;flex-direction:column;min-height:0}
+.wizard.modal{max-height:92vh}
+.wiz{display:flex;flex-direction:column;min-height:0;flex:1;max-height:calc(92vh - 70px)}
+.wiz-main{overflow:auto;padding:var(--sp-1) var(--sp-5) var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3);flex:1;min-height:200px}
+.wiz-f{display:flex;align-items:center;gap:var(--sp-2);justify-content:flex-end;padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--border);background:var(--surface-2);flex-wrap:wrap;position:sticky;bottom:0}
+.wiz-busy{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-8) 0;justify-content:center;font-weight:var(--fw-semi)}
+.dz{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-1);padding:var(--sp-8) var(--sp-4);border:2px dashed var(--border-strong);border-radius:var(--r-lg);background:var(--surface-2);color:var(--text-2);cursor:pointer;text-align:center;transition:all var(--dur-fast)}
+.dz:hover,.dz.over,.dz:focus-visible{border-color:var(--primary);background:var(--primary-soft);color:var(--primary-text)}
+.wiz-links{margin-top:var(--sp-1)}
+.recog{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-md);background:var(--success-soft);color:var(--success);font-size:var(--fs-sm)} .recog>span:not(.ic){flex:1;color:var(--text)} .recog .btn{flex:none}
+.pv-sum{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-4);border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface)} .pv-n{font-size:var(--fs-2xl);font-weight:var(--fw-bold);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--primary-text)}
+.wbox{padding:var(--sp-3) var(--sp-4);border:1px solid color-mix(in srgb,var(--warning) 35%,var(--border));border-radius:var(--r-lg);background:var(--warning-soft);font-size:var(--fs-sm)} .wbox summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:var(--fw-semi);color:var(--warning);padding:2px 0} .wbox .strong{display:flex;align-items:center;gap:6px;color:var(--warning)}
+.wlist{margin:var(--sp-1) 0 0;padding-left:20px;color:var(--text-2)} .wlist li{margin:2px 0}
+.pv-sec{border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-3) var(--sp-4);background:var(--surface)}
+.pv-h{display:flex;align-items:center;gap:6px;font-weight:var(--fw-semi);margin-bottom:var(--sp-2)}
+.pv-name{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) 0;border-top:1px solid var(--border-subtle)} .pv-name .select{width:min(300px,55%)} .pv-name.need .select{border-color:var(--warning);background-color:var(--warning-soft)}
+.pv-person{border-top:1px solid var(--border-subtle)} .pv-person:first-of-type{border-top:0} .pv-person>summary{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) 0;cursor:pointer;list-style:none} .pv-person>summary::-webkit-details-marker{display:none} .pv-person>summary::before{content:"›";display:inline-block;width:12px;color:var(--text-3);transition:transform var(--dur-fast)} .pv-person[open]>summary::before{transform:rotate(90deg)}
+.pv-row{display:grid;grid-template-columns:22px 150px minmax(0,1fr) auto;align-items:center;gap:var(--sp-3);padding:6px 0 6px 18px;border-top:1px dashed var(--border-subtle)} .pv-row.dim{opacity:.55}
+.pv-s{display:flex;align-items:center;gap:var(--sp-2);justify-content:flex-end;flex-wrap:wrap} .select.sm{height:28px;width:auto;min-width:140px;font-size:var(--fs-xs)}
+.pv-d{font-weight:var(--fw-semi);font-size:var(--fs-sm)}
+.rawwrap{border:1px solid var(--border);border-radius:var(--r-md);max-height:220px;overflow:auto} .rawtbl{border-collapse:collapse;width:100%;font-size:var(--fs-xs)} .rawtbl th,.rawtbl td{padding:4px 8px;border-bottom:1px solid var(--border-subtle);white-space:nowrap;text-align:left} .rawtbl thead th{position:sticky;top:0;background:var(--surface-2);color:var(--text-3);font-weight:var(--fw-semi);z-index:1} .rawtbl tbody th{color:var(--text-3);font-weight:var(--fw-regular);background:var(--surface-2)}
+.rawtbl tbody tr{cursor:pointer} .rawtbl tbody tr:hover{background:var(--surface-hover)} .rawtbl tbody tr.hdr{background:var(--primary-soft);font-weight:var(--fw-semi)}
+.done-h{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4) 0} .done-ic{width:40px;height:40px;background:var(--success-soft);color:var(--success)}
+@media (max-width:1024px){ .uwrap{grid-template-columns:1fr} }
+@media (max-width:640px){
+  .ucell{min-height:58px;padding:4px 5px} .ucal-grid{gap:4px} .ucard{padding:var(--sp-3)} .uind-t{display:none} .uind{padding:0 4px}
+  .upers{max-width:none;flex-basis:100%} .utool .seg{flex:1} .unav-nav{width:100%} .unav-nav .period-btn{flex:1;justify-content:center}
+  .ubar{position:fixed;left:var(--sp-3);right:var(--sp-3);bottom:calc(64px + env(safe-area-inset-bottom));z-index:28} .uwrap.has-ubar{padding-bottom:190px}
+  .wiz{max-height:calc(92vh - 60px)} .wiz-main{padding:var(--sp-1) var(--sp-4) var(--sp-3)} .wiz-f{padding:var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom))} .wiz-f .btn{flex:1}
+  .pv-row{grid-template-columns:22px minmax(0,1fr);row-gap:4px} .pv-m,.pv-s{grid-column:2} .pv-s{justify-content:flex-start} .pv-name{flex-wrap:wrap} .pv-name .select{width:100%}
+  .pv-sum{padding:var(--sp-3)} .fchip.fasce{height:40px}
+}
+
 /* ---------- stampa (ripiego PDF) ---------- */
 #printArea{display:none}
 @page{size:A4 landscape;margin:10mm}
@@ -432,7 +492,7 @@ table.mg{border-collapse:separate;border-spacing:0;width:100%;table-layout:auto}
   .popover{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;max-width:none!important;min-width:0;border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:78vh;padding-bottom:env(safe-area-inset-bottom);animation:sheetin var(--dur-slow) var(--ease)}
   .scrim.light{background:var(--scrim);z-index:69}
   .menu-item{height:44px} .fchip{height:36px} .btn.sm{height:34px}
-  #toasts{bottom:calc(72px + env(safe-area-inset-bottom))}
+  #toasts{bottom:auto;top:calc(var(--topbar-h) + 8px)}
   .months{grid-template-columns:repeat(3,1fr)}
 }
 @keyframes sheetin{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
@@ -1151,7 +1211,268 @@ const Store = {
     return normalizeState(d);
   },
 };
-if (typeof module !== 'undefined') module.exports = { monthDays, monthWeeks, holidaysIT, shiftCodes, U, defaultState, normalizeState, validateSchedule, generateSchedule, previewAssignment, demandCells, weekServices, ensureWeek, Store, makeEnv, analyzePerson, personName };
+if (typeof module !== 'undefined') module.exports = { SVC_COLORS, monthDays, monthWeeks, holidaysIT, shiftCodes, U, defaultState, normalizeState, validateSchedule, generateSchedule, previewAssignment, demandCells, weekServices, ensureWeek, Store, makeEnv, analyzePerson, personName };
+
+/* =====================================================================
+   INDISPONIBILITÀ – logica dati (nessun DOM)
+   Un'unica sorgente: S.unavail = [{id, person, from, to, shifts:null|[id], note}].
+   Calendario, periodo Da/A e importazione Excel passano tutti da qui:
+   si lavora "per giorno" (dayMap) e si riscrive l'elenco in forma compatta.
+   ===================================================================== */
+const Unav = {
+  MAX_SPAN: 3700,
+  /* Map data → {all, shifts:Set, note} per una persona */
+  dayMap(S, pid) {
+    const m = new Map();
+    for (const e of S.unavail) {
+      if (e.person !== pid || !e.from || !e.to) continue;
+      const all = !e.shifts || !e.shifts.length; let n = 0;
+      for (let d = e.from; d <= e.to && n < Unav.MAX_SPAN; d = U.addDays(d, 1), n++) {
+        let x = m.get(d); if (!x) { x = { all: false, shifts: new Set(), note: '' }; m.set(d, x); }
+        if (all) x.all = true; else e.shifts.forEach(s => x.shifts.add(s));
+        if (e.note && !x.note) x.note = e.note;
+      }
+    }
+    return m;
+  },
+  isEmpty(x) { return !x || (!x.all && !x.shifts.size); },
+  /* riscrive le voci della persona comprimendo i giorni consecutivi con lo stesso contenuto */
+  setDayMap(S, pid, map) {
+    const valid = new Set(S.shiftTypes.map(t => t.id));
+    S.unavail = S.unavail.filter(e => e.person !== pid);
+    const days = [...map.keys()].filter(d => !Unav.isEmpty(map.get(d))).sort();
+    let cur = null;
+    const keyOf = x => (x.all ? '*' : [...x.shifts].filter(s => valid.has(s)).sort().join(',')) + '|' + (x.note || '');
+    for (const d of days) {
+      const x = map.get(d), k = keyOf(x); if (k.startsWith('|')) continue; // solo fasce non più valide
+      if (cur && cur.k === k && U.addDays(cur.e.to, 1) === d) cur.e.to = d;
+      else { cur = { k, e: { id: U.uid('u'), person: pid, from: d, to: d, shifts: x.all ? null : [...x.shifts].filter(s => valid.has(s)).sort((a, b) => S.shiftTypes.findIndex(t => t.id === a) - S.shiftTypes.findIndex(t => t.id === b)), note: x.note || '' } }; S.unavail.push(cur.e); }
+    }
+  },
+  datesBetween(a, b) { const out = []; if (!a || !b || b < a) return out; for (let d = a, n = 0; d <= b && n < Unav.MAX_SPAN; d = U.addDays(d, 1), n++) out.push(d); return out; },
+  /* applica una fascia a più date. spec = {all:boolean, shifts:[id]} ; mode = add | remove | set */
+  apply(S, pid, dates, spec, mode, note) {
+    const map = Unav.dayMap(S, pid), allIds = S.shiftTypes.map(t => t.id); let changed = 0;
+    for (const d of dates) {
+      let x = map.get(d); const before = x ? JSON.stringify([x.all, [...x.shifts].sort()]) : '[false,[]]';
+      if (!x) { x = { all: false, shifts: new Set(), note: '' }; map.set(d, x); }
+      if (mode === 'set') { x.all = !!spec.all; x.shifts = new Set(spec.all ? [] : spec.shifts); if (note != null) x.note = note; }
+      else if (mode === 'add') { if (spec.all) { x.all = true; x.shifts = new Set(); } else if (!x.all) spec.shifts.forEach(s => x.shifts.add(s)); if (note && !x.note) x.note = note; }
+      else if (mode === 'remove') {
+        if (spec.all) { x.all = false; x.shifts = new Set(); }
+        else { if (x.all) { x.all = false; x.shifts = new Set(allIds); } spec.shifts.forEach(s => x.shifts.delete(s)); }
+      }
+      if (Unav.isEmpty(x)) map.delete(d);
+      const after = map.has(d) ? JSON.stringify([x.all, [...x.shifts].sort()]) : '[false,[]]';
+      if (before !== after) changed++;
+    }
+    Unav.setDayMap(S, pid, map);
+    return changed;
+  },
+  /* a copre b? (a.all copre tutto; altrimenti le fasce di b devono essere incluse in a) */
+  covers(a, b) { if (Unav.isEmpty(b)) return true; if (a.all) return true; if (b.all) return false; return [...b.shifts].every(s => a.shifts.has(s)); },
+  /* riepilogo mensile: giorni con almeno un'indisponibilità e conteggi per fascia */
+  monthSummary(S, pid, ym) {
+    const m = Unav.dayMap(S, pid), out = { days: 0, all: 0, byShift: {} };
+    for (const [d, x] of m) { if (d.slice(0, 7) !== ym || Unav.isEmpty(x)) continue; out.days++; if (x.all) out.all++; else x.shifts.forEach(s => { out.byShift[s] = (out.byShift[s] || 0) + 1; }); }
+    return out;
+  },
+  clearMonth(S, pid, ym) { const m = Unav.dayMap(S, pid); let n = 0; for (const d of [...m.keys()]) if (d.slice(0, 7) === ym) { m.delete(d); n++; } Unav.setDayMap(S, pid, m); return n; },
+};
+
+/* =====================================================================
+   IMPORTAZIONE INDISPONIBILITÀ DA EXCEL – riconoscimento e analisi (nessun DOM)
+   Matrice = array di righe; ogni cella {t, v, w, date?} oppure null.
+   ===================================================================== */
+const Imp = {
+  norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim(); },
+  text(c) { return c ? String(c.w != null && c.w !== '' ? c.w : c.v == null ? '' : c.v).trim() : ''; },
+  colName(i) { let s = ''; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s; return s; },
+  MONTHS: { gennaio: 1, gen: 1, febbraio: 2, feb: 2, marzo: 3, mar: 3, aprile: 4, apr: 4, maggio: 5, mag: 5, giugno: 6, giu: 6, luglio: 7, lug: 7, agosto: 8, ago: 8, settembre: 9, set: 9, sett: 9, ottobre: 10, ott: 10, novembre: 11, nov: 11, dicembre: 12, dic: 12 },
+  SYN: {
+    person: ['persona', 'nome', 'dipendente', 'medico', 'operatore', 'cognome', 'nominativo', 'collaboratore', 'infermiere', 'personale', 'risorsa', 'name', 'employee', 'staff', 'cognome nome', 'nome cognome', 'cognome e nome', 'nome e cognome'],
+    date: ['data', 'giorno', 'date', 'day', 'dal', 'da', 'inizio', 'from', 'start', 'data inizio', 'dal giorno'],
+    to: ['al', 'a', 'fine', 'to', 'end', 'fino', 'data fine', 'fino al', 'al giorno'],
+    shift: ['turno', 'turni', 'fascia', 'fasce', 'tipo', 'shift', 'indisponibilita', 'indisponibile', 'fascia oraria', 'tipologia'],
+    note: ['note', 'nota', 'motivo', 'commento', 'notes', 'descrizione', 'causale'],
+  },
+  ALL_TOKENS: ['tutto il giorno', 'tutto', 'tutta la giornata', 'giornata intera', 'intera giornata', 'giornata', 'full day', 'fullday', 'all day', 'allday', 'all', 'full', 't', 'g', 'x', 'ind', 'indisponibile', 'ferie', 'f', 'assente', 'assenza', 'riposo', 'r', 'permesso'],
+  NONE_TOKENS: ['', '-', '–', '—', '.', '/', 'no', 'disponibile', 'libero', 'l', 'ok'],
+
+  /* ---- date ---- */
+  daysIn(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); },
+  mkDate(y, m, d) { if (y < 100) y += 2000; if (m < 1 || m > 12 || d < 1 || d > Imp.daysIn(y, m)) return null; return y + '-' + U.pad(m) + '-' + U.pad(d); },
+  /* restituisce {ok:true, iso} | {ok:false, reason} | null (cella vuota) ; ref = {y, m} per date senza anno/mese */
+  parseDate(c, ref) {
+    if (!c) return null;
+    if (c.date) return { ok: true, iso: c.date };
+    let s = Imp.text(c); if (!s) return null;
+    s = Imp.norm(s.replace(/[\/.]/g, '-')).replace(/\b(lun|mar|mer|gio|ven|sab|dom)[a-z]*\b/g, '').trim();
+    let m;
+    const raw = Imp.text(c).trim().replace(/\s+/g, ' ');
+    if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(raw))) { const iso = Imp.mkDate(+m[1], +m[2], +m[3]); return iso ? { ok: true, iso } : { ok: false, reason: `Data non valida: «${raw}»` }; }
+    if ((m = /^(?:[a-zà-ÿ]+\.?\s+)?(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/i.exec(raw))) { const iso = Imp.mkDate(+m[3], +m[2], +m[1]); return iso ? { ok: true, iso } : { ok: false, reason: `Data non valida: «${raw}»` }; }
+    if ((m = /^(?:[a-zà-ÿ]+\.?\s+)?(\d{1,2})[\/\-.](\d{1,2})$/i.exec(raw))) { const iso = Imp.mkDate(ref.y, +m[2], +m[1]); return iso ? { ok: true, iso } : { ok: false, reason: `Data non valida: «${raw}»` }; }
+    if ((m = /^(?:[a-zà-ÿ]+\.?\s+)?(\d{1,2})\s+([a-zà-ÿ]+)\.?(?:\s+(\d{2,4}))?$/i.exec(raw))) {
+      const mo = Imp.MONTHS[Imp.norm(m[2])]; if (mo) { const iso = Imp.mkDate(m[3] ? +m[3] : ref.y, mo, +m[1]); return iso ? { ok: true, iso } : { ok: false, reason: `Data non valida: «${raw}»` }; }
+    }
+    return { ok: false, reason: `Data non riconosciuta: «${raw}»` };
+  },
+  /* numero di giorno (1-31) da una cella di intestazione "1", "01", "Lun 1", "1 Lun" */
+  dayNumber(c) {
+    if (!c) return null; if (c.date) return +c.date.slice(8);
+    const s = Imp.text(c); if (!s || s.length > 8) return null;
+    const m = /^(?:[A-Za-zà-ÿ]{2,9}\.?\s*)?(\d{1,2})(?:\s*[A-Za-zà-ÿ]{2,9}\.?)?$/.exec(s); if (!m) return null;
+    const n = +m[1]; return n >= 1 && n <= 31 ? n : null;
+  },
+
+  /* ---- fasce ---- */
+  shiftResolver(S) {
+    const codes = shiftCodes(S), map = new Map(), allSet = new Set(Imp.ALL_TOKENS);
+    const add = (tok, id) => { tok = Imp.norm(tok); if (tok && !map.has(tok)) map.set(tok, id); };
+    for (const t of S.shiftTypes) { add(t.name, t.id); add(codes[t.id], t.id); }
+    for (const t of S.shiftTypes) {
+      const st = U.hours(t.start);
+      const syn = t.night ? ['n', 'notte', 'night', 'notturno', 'not'] : st < 12 ? ['m', 'mattina', 'am', 'morning', 'mat', 'mattino'] : ['p', 'pomeriggio', 'pm', 'afternoon', 'pom', 'sera'];
+      syn.forEach(x => { if (!allSet.has(x) || map.get(x) === undefined) add(x, t.id); });
+    }
+    const ALLWORDS = new Set(Imp.ALL_TOKENS.map(Imp.norm)), NONE = new Set(Imp.NONE_TOKENS.map(Imp.norm));
+    const one = (p, out) => { p = Imp.norm(p); if (NONE.has(p)) return; if (map.has(p)) { out.shifts.add(map.get(p)); return; } if (ALLWORDS.has(p)) { out.all = true; return; } if (p.includes(' ')) { const ws = p.split(' '); ws.forEach(w => { if (NONE.has(w)) return; if (map.has(w)) out.shifts.add(map.get(w)); else if (ALLWORDS.has(w)) out.all = true; else out.unknown.push(w); }); return; } out.unknown.push(p); };
+    return text => {
+      const out = { all: false, shifts: new Set(), unknown: [] }; let s = Imp.norm(text);
+      if (!s || NONE.has(s)) return out;
+      if (map.has(s)) { out.shifts.add(map.get(s)); return out; }
+      if (ALLWORDS.has(s)) { out.all = true; return out; }
+      String(text).replace(/\s+e\s+/gi, ',').split(/[,;+&\/|]/).forEach(p => one(p, out));
+      if (out.all) out.shifts = new Set();
+      return out;
+    };
+  },
+
+  /* ---- persone ---- */
+  personMatcher(S) {
+    const variants = S.people.map(p => {
+      const f = Imp.norm(p.first), l = Imp.norm(p.last), d = Imp.norm(p.display), v = new Set();
+      [d, (f + ' ' + l).trim(), (l + ' ' + f).trim(), f && l ? f + ' ' + l[0] : '', f && l ? l + ' ' + f[0] : ''].forEach(x => { if (x) v.add(x); });
+      return { id: p.id, v: [...v], f, l, d };
+    });
+    const tokOk = (a, b) => a.every(x => b.some(y => y === x || (x.length === 1 && y.startsWith(x)) || (y.length === 1 && x.startsWith(y))));
+    const cache = new Map();
+    return text => {
+      const q = Imp.norm(text); if (!q) return { status: 'none', candidates: [] };
+      if (cache.has(q)) return cache.get(q);
+      let c = variants.filter(p => p.v.includes(q)).map(p => p.id);
+      if (!c.length) { const qt = q.split(' '); c = variants.filter(p => p.v.some(v => { const vt = v.split(' '); return tokOk(qt, vt) || tokOk(vt, qt); })).map(p => p.id); }
+      const r = c.length === 1 ? { status: 'ok', id: c[0], candidates: c } : c.length > 1 ? { status: 'ambiguous', candidates: c } : { status: 'none', candidates: [] };
+      cache.set(q, r); return r;
+    };
+  },
+
+  /* ---- lettura del foglio (browser) ---- */
+  readSheet(XLSX, ws) {
+    const ref = ws['!ref']; if (!ref) return [];
+    const rg = XLSX.utils.decode_range(ref), rows = [];
+    for (let r = rg.s.r; r <= rg.e.r && r < rg.s.r + 5000; r++) {
+      const row = [];
+      for (let c = rg.s.c; c <= rg.e.c && c < rg.s.c + 200; c++) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+        if (!cell || (cell.v == null && cell.w == null)) { row.push(null); continue; }
+        const o = { t: cell.t, v: cell.v, w: cell.w != null ? cell.w : (cell.v == null ? '' : String(cell.v)) };
+        if (cell.t === 'n' && cell.z && XLSX.SSF.is_date(cell.z)) { const p = XLSX.SSF.parse_date_code(cell.v); if (p) { o.date = p.y + '-' + U.pad(p.m) + '-' + U.pad(p.d); } }
+        else if (cell.t === 'd' && cell.v instanceof Date) { const d = cell.v; o.date = d.getFullYear() + '-' + U.pad(d.getMonth() + 1) + '-' + U.pad(d.getDate()); }
+        row.push(o);
+      }
+      rows.push(row);
+    }
+    return rows;
+  },
+  transpose(m) { const w = Math.max(0, ...m.map(r => r.length)); return Array.from({ length: w }, (_, c) => m.map(r => r[c] || null)); },
+
+  /* colonne di giorno (numeri 1-31 o date) di una riga di intestazione */
+  dayCols(mx, r) { const dc = []; (mx[r] || []).forEach((c, i) => { if (!c) return; const n = c.date ? +c.date.slice(8) : Imp.dayNumber(c); if (n) dc.push({ col: i, day: n, date: c.date || null }); }); return dc; },
+  /* ---- riconoscimento automatico del formato ---- */
+  roleOf(txt) { const n = Imp.norm(txt); if (!n) return null; for (const k of ['person', 'to', 'shift', 'note', 'date']) if (Imp.SYN[k].includes(n)) return k; return null; },
+  guessRef(matrix, sheetName, fallback) { // mese/anno dai titoli del foglio o dal nome del foglio
+    const texts = [sheetName || '']; for (let r = 0; r < Math.min(6, matrix.length); r++) for (const c of matrix[r] || []) if (c && c.t === 's') texts.push(Imp.text(c));
+    for (const t of texts) { const n = Imp.norm(t); const mm = /\b(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b\s*(\d{4})?/.exec(n); if (mm) return { y: mm[2] ? +mm[2] : fallback.y, m: Imp.MONTHS[mm[1]] }; }
+    return fallback;
+  },
+  detect(matrix, S, fallbackRef, sheetName) {
+    const match = Imp.personMatcher(S), cand = [];
+    const ref = Imp.guessRef(matrix, sheetName, fallbackRef);
+    // formato ELENCO: intestazione con persona + data
+    for (let r = 0; r < Math.min(20, matrix.length); r++) {
+      const cols = {}; (matrix[r] || []).forEach((c, i) => { const role = c && c.t === 's' ? Imp.roleOf(Imp.text(c)) : null; if (role && cols[role] === undefined) cols[role] = i; });
+      if (cols.person !== undefined && cols.date !== undefined) {
+        // "Dal"/"Al" → data/to ; se la colonna data è "da" e c'è "a"/"al" è un intervallo
+        const body = matrix.slice(r + 1).filter(row => row && row.some(c => c)); let ok = 0;
+        body.slice(0, 40).forEach(row => { const pd = Imp.parseDate(row[cols.date], ref); if (pd && pd.ok && match(Imp.text(row[cols.person])).status === 'ok') ok++; });
+        cand.push({ mode: 'long', headerRow: r, person: cols.person, date: cols.date, to: cols.to, shift: cols.shift, note: cols.note, score: ok + 5 + (cols.shift !== undefined ? 3 : 0), ref, ratio: body.length ? ok / Math.min(40, body.length) : 0 });
+        break;
+      }
+    }
+    // formato GRIGLIA: intestazione con molti giorni (numeri o date) ; prova anche la trasposta
+    for (const tr of [false, true]) {
+      const mx = tr ? Imp.transpose(matrix) : matrix;
+      for (let r = 0; r < Math.min(25, mx.length); r++) {
+        const dc = Imp.dayCols(mx, r);
+        if (dc.length < 5) continue;
+        // sequenza crescente ≥ 5 colonne di giorni vicine
+        const first = dc[0].col; const nameCol = Math.max(0, first - 1);
+        let best = 0; for (let c = 0; c < first; c++) { let k = 0; for (let rr = r + 1; rr < Math.min(mx.length, r + 60); rr++) { const t = Imp.text((mx[rr] || [])[c]); if (t && match(t).status !== 'none') k++; } if (k > best) { best = k; } }
+        const nm = (() => { let bc = nameCol, bk = -1; for (let c = 0; c < first; c++) { let k = 0; for (let rr = r + 1; rr < Math.min(mx.length, r + 60); rr++) { const t = Imp.text((mx[rr] || [])[c]); if (t && match(t).status !== 'none') k++; } if (k > bk) { bk = k; bc = c; } } return bc; })();
+        let rowsN = 0; for (let rr = r + 1; rr < Math.min(mx.length, r + 60); rr++) if (Imp.text((mx[rr] || [])[nm])) rowsN++;
+        cand.push({ mode: 'wide', transposed: tr, headerRow: r, nameCol: nm, dayCols: dc, score: best * 2 + dc.length, ref, ratio: rowsN ? best / rowsN : 0 });
+        break;
+      }
+    }
+    if (!cand.length) return { found: false, ref };
+    cand.sort((a, b) => b.score - a.score); const top = cand[0];
+    top.confidence = top.mode === 'long' ? (top.ratio >= 0.5 ? (top.shift !== undefined ? 'high' : 'medium') : 'low') : (top.ratio >= 0.5 ? (top.dayCols.length >= 10 ? 'high' : 'medium') : 'low');
+    top.found = true; return top;
+  },
+
+  /* ---- estrazione dei record con un mapping (automatico o manuale) ---- */
+  extract(matrix, mp, S) {
+    const parseShift = Imp.shiftResolver(S), records = [], issues = [], ref = mp.ref;
+    const addIssue = (kind, msg, src) => issues.push({ kind, msg, src });
+    if (mp.mode === 'long') {
+      for (let r = mp.headerRow + 1; r < matrix.length; r++) {
+        const row = matrix[r] || []; if (!row.some(c => c && Imp.text(c))) continue;
+        const src = 'riga ' + (r + 1), pt = Imp.text(row[mp.person]);
+        if (!pt) { addIssue('row', `${src}: persona mancante`, src); continue; }
+        const d1 = Imp.parseDate(row[mp.date], ref);
+        if (!d1) { addIssue('date', `${src}: data mancante`, src); continue; }
+        if (!d1.ok) { addIssue('date', `${src}: ${d1.reason}`, src); continue; }
+        let d2 = d1; if (mp.to !== undefined && mp.to !== null && mp.to !== '') { const x = Imp.parseDate(row[mp.to], ref); if (x && !x.ok) { addIssue('date', `${src}: ${x.reason}`, src); continue; } if (x) d2 = x; }
+        if (d2.iso < d1.iso) { addIssue('date', `${src}: la data finale precede quella iniziale`, src); continue; }
+        let sp; if (mp.shift !== undefined && mp.shift !== null && mp.shift !== '') { sp = parseShift(Imp.text(row[mp.shift])); if (sp.unknown.length) { addIssue('code', `${src}: fascia non riconosciuta «${sp.unknown.join(', ')}»`, src); if (!sp.all && !sp.shifts.size) continue; } if (!sp.all && !sp.shifts.size && !sp.unknown.length) { addIssue('row', `${src}: fascia mancante`, src); continue; } } else sp = { all: true, shifts: new Set(), unknown: [] };
+        const note = mp.note !== undefined && mp.note !== null && mp.note !== '' ? Imp.text(row[mp.note]) : '';
+        for (const d of Unav.datesBetween(d1.iso, d2.iso)) records.push({ personText: pt, date: d, mask: { all: sp.all, shifts: new Set(sp.shifts) }, note, src });
+      }
+    } else {
+      const mx = mp.transposed ? Imp.transpose(matrix) : matrix, hdr = mx[mp.headerRow] || [];
+      const cols = mp.dayCols || [];
+      for (let r = mp.headerRow + 1; r < mx.length; r++) {
+        const row = mx[r] || [], pt = Imp.text(row[mp.nameCol]);
+        const cells = cols.map(dc => ({ dc, c: row[dc.col] })).filter(x => x.c && Imp.text(x.c));
+        if (!cells.length) continue;
+        const src = 'riga ' + (r + 1);
+        if (!pt) { addIssue('row', `${src}: nome mancante`, src); continue; }
+        if (/^(totale|tot|totali|legenda|note)\b/.test(Imp.norm(pt))) continue;
+        for (const { dc, c } of cells) {
+          let iso = dc.date; if (!iso) { iso = Imp.mkDate(ref.y, ref.m, dc.day); if (!iso) { addIssue('date', `${src}: giorno ${dc.day} non valido per ${U.pad(ref.m)}/${ref.y}`, src); continue; } }
+          const sp = parseShift(Imp.text(c));
+          if (sp.unknown.length) addIssue('code', `${src}, ${U.fmtShort(iso)}: codice non riconosciuto «${sp.unknown.join(', ')}»`, src);
+          if (!sp.all && !sp.shifts.size) continue;
+          records.push({ personText: pt, date: iso, mask: { all: sp.all, shifts: new Set(sp.shifts) }, note: '', src });
+        }
+      }
+    }
+    return { records, issues };
+  },
+};
+if (typeof module !== 'undefined') module.exports.Imp = Imp, module.exports.Unav = Unav;
 
 /* =====================================================================
    UI BASE: stato applicazione, helper DOM, icone, componenti riutilizzabili
@@ -1256,11 +1577,29 @@ window.addEventListener('beforeunload', () => Store.save(S));
 
 /* undo: istantanee delle sole programmazioni (assegnazioni, override, note) */
 const undoStack = [];
-function pushUndo(label) { undoStack.push({ label, weeks: JSON.stringify(S.weeks) }); if (undoStack.length > 25) undoStack.shift(); }
+function pushUndo(label) { undoStack.push({ label, weeks: JSON.stringify(S.weeks), unavail: JSON.stringify(S.unavail), people: JSON.stringify(S.people) }); if (undoStack.length > 25) undoStack.shift(); }
 function undoLast() {
   const u = undoStack.pop(); if (!u) { toast('Niente da annullare.', 'info'); return false; }
-  S.weeks = JSON.parse(u.weeks); persist(); render(); toast('Annullato: ' + u.label, 'info'); return true;
+  S.weeks = JSON.parse(u.weeks); S.unavail = JSON.parse(u.unavail); S.people = JSON.parse(u.people); persist(); render(); toast('Annullato: ' + u.label, 'info'); return true;
 }
+
+/* caricamento "al bisogno" delle librerie Excel (non appesantiscono l'avvio) */
+const _libs = {};
+function loadLib(name, urls, ready) {
+  if (ready()) return Promise.resolve();
+  if (_libs[name]) return _libs[name];
+  return (_libs[name] = new Promise((res, rej) => {
+    let i = 0;
+    const next = () => { if (i >= urls.length) { delete _libs[name]; return rej(new Error(name + ' non raggiungibile')); } const s = document.createElement('script'); s.src = urls[i++]; s.onload = () => (ready() ? res() : next()); s.onerror = () => { s.remove(); next(); }; document.head.append(s); };
+    next();
+  }));
+}
+const Libs = {
+  /* ExcelJS 4.4.0 – scrittura .xlsx con stili, filtri, riquadri bloccati e formattazione condizionale */
+  excelJS: () => loadLib('ExcelJS', ['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'], () => !!window.ExcelJS),
+  /* SheetJS 0.18.5 – lettura .xlsx/.xls/.csv */
+  sheetJS: () => loadLib('XLSX', ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'], () => !!window.XLSX),
+};
 
 /* ------------------------------------------------------- validazione (cache) */
 const vCache = new Map();
@@ -1476,6 +1815,19 @@ function filterChips() {
   if (f.issues) chips.push(mk('Solo problemi', () => { f.issues = false; persist(false); render(); }));
   if (UIx.search.trim()) chips.push(mk('Ricerca: “' + UIx.search.trim() + '”', () => { UIx.search = ''; render(); }));
   return chips.length ? h('div', { class: 'achips' }, chips, h('button', { class: 'btn ghost sm', onclick: resetFilters }, 'Reset filtri')) : null;
+}
+
+/* ---------------------------------------------------------- esportazione */
+function openExportMenu(anchor) {
+  const grp = S.ui.group === 'service' ? 'per servizio' : 'per persona', fa = filtersActive();
+  menu(anchor, [
+    { header: 'Excel (modificabile)' },
+    { icon: 'file', label: fa ? `Vista corrente (filtrata, ${grp})` : `Vista corrente (${grp})`, onClick: () => exportExcel('view') },
+    { icon: 'layers', label: 'Tutto il periodo (persone e servizi)', onClick: () => exportExcel('all') },
+    '-', { header: 'PDF (stampa)' },
+    { icon: 'file', label: 'Settimana · per servizio', onClick: () => exportPDF('week', 'service') }, { icon: 'file', label: 'Settimana · per persona', onClick: () => exportPDF('week', 'people') },
+    { icon: 'file', label: 'Mese · per servizio', onClick: () => exportPDF('month', 'service') }, { icon: 'file', label: 'Mese · per persona', onClick: () => exportPDF('month', 'people') },
+  ], { key: 'export', align: 'end' });
 }
 
 /* -------------------------------------------------------- barra periodo */
@@ -1796,9 +2148,8 @@ function viewPlanner() {
       { icon: 'undo', label: 'Annulla ultima azione', hint: 'Ctrl Z', disabled: !undoStack.length, onClick: undoLast },
       '-', { header: month ? 'Configura settimana' : 'Settimana' },
       ...(month ? periodWeeks().map(w => ({ icon: 'sliders', label: fmtRange(w, U.addDays(w, 6)), onClick: () => openWeekConfig(w) })) : [{ icon: 'settings', label: 'Configura settimana…', onClick: () => openWeekConfig(S.ui.ws) }]),
-      '-', { header: 'Esporta PDF' },
-      { icon: 'file', label: 'Settimana · per servizio', onClick: () => exportPDF('week', 'service') }, { icon: 'file', label: 'Settimana · per persona', onClick: () => exportPDF('week', 'people') },
-      { icon: 'file', label: 'Mese · per servizio', onClick: () => exportPDF('month', 'service') }, { icon: 'file', label: 'Mese · per persona', onClick: () => exportPDF('month', 'people') },
+      '-', { header: 'Indisponibilità' },
+      { icon: 'upload', label: 'Importa da Excel…', onClick: () => openUnavImport() },
     ]) }, ic('more', 18))];
   const toolbar = h('div', { class: 'toolbar' },
     periodNav(),
@@ -1806,7 +2157,8 @@ function viewPlanner() {
     seg([{ value: 'people', label: 'Persone' }, { value: 'service', label: 'Servizi' }], S.ui.group, v => { S.ui.group = v; UIx.anim = true; persist(false); render(); }, 'Raggruppa per'),
     seg([{ value: 'month', label: 'Mese' }, { value: 'week', label: 'Settimana' }], S.ui.mode, setMode, 'Vista'),
     h('div', { class: 'search' }, ic('search', 15), h('input', { id: 'q', class: 'input', type: 'search', placeholder: 'Cerca persona', 'aria-label': 'Cerca persona', value: UIx.search, oninput: e => { UIx.search = e.target.value; clearTimeout(UIx._t); UIx._t = setTimeout(() => { render(); const q = document.getElementById('q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 160); } }), h('kbd', { class: 'kbd' }, '/')),
-    h('button', { class: 'btn' + (filtersActive() ? ' active' : ''), 'data-pop': 'filters', 'aria-haspopup': 'dialog', onclick: e => openFilters(e.currentTarget) }, ic('filter', 15), h('span', null, 'Filtri'), filtersActive() ? h('span', { class: 'count' }, filtersActive()) : null));
+    h('button', { class: 'btn' + (filtersActive() ? ' active' : ''), 'data-pop': 'filters', 'aria-haspopup': 'dialog', onclick: e => openFilters(e.currentTarget) }, ic('filter', 15), h('span', null, 'Filtri'), filtersActive() ? h('span', { class: 'count' }, filtersActive()) : null),
+    h('button', { class: 'btn', 'data-pop': 'export', 'aria-haspopup': 'menu', onclick: e => openExportMenu(e.currentTarget) }, ic('download', 15), h('span', null, 'Esporta')));
   let content;
   if (!S.people.length) content = h('div', { class: 'card' }, emptyState('users', 'Inizia aggiungendo il personale', 'Servono almeno due passaggi: inserire il personale e (se vuoi) rivedere servizi e turni. Poi un clic su «Genera».', [h('button', { class: 'btn primary', onclick: () => go('people') }, ic('plus', 15), 'Aggiungi personale'), h('button', { class: 'btn', onclick: loadDemoPeople }, 'Carica dati di esempio')]));
   else content = h('div', { class: 'planner' }, statusBar(P), filterChips(), S.ui.group === 'service' ? serviceGrid(P) : monthGrid(P), legend());
@@ -1814,8 +2166,8 @@ function viewPlanner() {
 }
 function legend() {
   const codes = shiftCodes(S);
-  return h('div', { class: 'legend' }, S.shiftTypes.map(t => h('span', { class: 'lg' }, h('span', { class: 'sc mini', style: shiftVars(t) }, h('span', { class: 'sc-c' }, codes[t.id])), t.name, h('span', { class: 'muted xs tnum' }, t.start + '–' + t.end))),
-    h('span', { class: 'lg' }, ic('lock', 12), 'Bloccato'), h('span', { class: 'lg' }, h('i', { class: 'lg-dot err' }), 'Conflitto'), h('span', { class: 'lg' }, h('i', { class: 'lg-dot soft' }), 'Preferenza violata'), h('span', { class: 'lg' }, ic('ban', 12), 'Indisponibile'), h('span', { class: 'lg' }, h('i', { class: 'hdot static' }), 'Festività'));
+  return h('div', { class: 'legend' }, S.shiftTypes.map(t => h('span', { class: 'lgi' }, h('span', { class: 'sc mini', style: shiftVars(t) }, h('span', { class: 'sc-c' }, codes[t.id])), t.name, h('span', { class: 'muted xs tnum' }, t.start + '–' + t.end))),
+    h('span', { class: 'lgi' }, ic('lock', 12), 'Bloccato'), h('span', { class: 'lgi' }, h('i', { class: 'lg-dot err' }), 'Conflitto'), h('span', { class: 'lgi' }, h('i', { class: 'lg-dot soft' }), 'Preferenza violata'), h('span', { class: 'lgi' }, ic('ban', 12), 'Indisponibile'), h('span', { class: 'lgi' }, h('i', { class: 'hdot static' }), 'Festività'));
 }
 
 /* =====================================================================
@@ -1878,7 +2230,7 @@ function viewPeople() {
     S.people.length ? h('div', { class: 'list card pad0' }, list.length ? list.map(p => h('div', { class: 'li' + (p.active === false ? ' inactive' : '') },
       h('div', { class: 'li-main' }, avatar(p), h('div', null, h('div', { class: 'strong' }, personName(p)), h('div', { class: 'muted sm' }, [p.role, (p.first || p.last) ? `${p.first || ''} ${p.last || ''}`.trim() : ''].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ')))),
       h('div', { class: 'li-chips' }, p.services.map(id => S.services.find(s => s.id === id)).filter(Boolean).map(s => badge(s.name)), p.night ? badge('Notte', 'night', 'moon') : null, p.active === false ? badge('Non attivo') : null),
-      h('div', { class: 'li-act' }, h('button', { class: 'btn icon ghost', 'aria-label': 'Azioni per ' + personName(p), 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, [{ icon: 'edit', label: 'Modifica', onClick: () => editPerson(p) }, { icon: 'userx', label: 'Aggiungi assenza', onClick: () => editUnavail(null, p.id) }, '-', { icon: 'trash', label: 'Elimina…', danger: true, onClick: () => deletePerson(p) }]) }, ic('more', 18)))))
+      h('div', { class: 'li-act' }, h('button', { class: 'btn icon ghost', 'aria-label': 'Azioni per ' + personName(p), 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, [{ icon: 'edit', label: 'Modifica', onClick: () => editPerson(p) }, { icon: 'userx', label: 'Indisponibilità…', onClick: () => openUnavFor(p.id) }, '-', { icon: 'trash', label: 'Elimina…', danger: true, onClick: () => deletePerson(p) }]) }, ic('more', 18)))))
       : emptyState('search', 'Nessun risultato', 'Prova con un altro nome.'))
       : h('div', { class: 'card' }, emptyState('users', 'Nessuna persona', 'Aggiungi il personale per iniziare a pianificare.', [h('button', { class: 'btn primary', onclick: () => editPerson() }, ic('plus', 15), 'Nuova persona'), h('button', { class: 'btn', onclick: loadDemoPeople }, 'Carica dati di esempio')])));
   return { title: 'Personale', sub: S.people.filter(p => p.active !== false).length + ' attivi', actions, body };
@@ -1976,38 +2328,6 @@ async function deleteShift(t) {
   persist(); render(); toast('Tipologia eliminata');
 }
 
-/* ---------------------------------------------------------------- assenze */
-let unavailFilter = '';
-function viewAbsences() {
-  const today = U.today();
-  const list = S.unavail.filter(u => !unavailFilter || u.person === unavailFilter).sort((a, b) => a.from.localeCompare(b.from));
-  const actions = [h('button', { class: 'btn primary', onclick: () => editUnavail(), disabled: !S.people.length }, ic('plus', 16), h('span', { class: 'lbl' }, 'Nuova assenza'))];
-  const body = h('div', null, h('div', { class: 'toolbar' }, select([{ value: '', label: 'Tutte le persone' }].concat(S.people.map(p => ({ value: p.id, label: personName(p) }))), unavailFilter, v => { unavailFilter = v; render(); }, { 'aria-label': 'Filtra per persona', class: 'input select auto' }), h('span', { class: 'muted sm' }, `${list.length} ${list.length === 1 ? 'indisponibilità' : 'indisponibilità'}`)),
-    h('p', { class: 'hint pad-b' }, 'Sono vincoli obbligatori: il generatore non assegna mai una persona in un turno in cui è indisponibile.'),
-    list.length ? h('div', { class: 'list card pad0' }, list.map(u => { const p = personById(u.person), past = u.to < today, now = u.from <= today && today <= u.to;
-      return h('div', { class: 'li' + (past ? ' inactive' : '') }, h('div', { class: 'li-main' }, avatar(p), h('div', null, h('div', { class: 'strong' }, personName(p)), h('div', { class: 'muted sm tnum' }, u.from === u.to ? U.fmtDate(u.from) : `${U.fmtDate(u.from)} → ${U.fmtDate(u.to)}`, u.note ? ' · ' + u.note : ''))),
-        h('div', { class: 'li-chips' }, u.shifts && u.shifts.length ? u.shifts.map(s => shiftById(s)).filter(Boolean).map(t => shiftBadge(t, { sm: true })) : badge('Tutto il giorno'), now ? badge('In corso', 'warn') : past ? badge('Conclusa') : null),
-        h('div', { class: 'li-act' }, h('button', { class: 'btn icon ghost', 'aria-label': 'Azioni', 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, [{ icon: 'edit', label: 'Modifica', onClick: () => editUnavail(u) }, '-', { icon: 'trash', label: 'Elimina', danger: true, onClick: () => { S.unavail = S.unavail.filter(x => x !== u); persist(); render(); toast('Indisponibilità eliminata'); } }]) }, ic('more', 18)))); }))
-      : h('div', { class: 'card' }, emptyState('userx', 'Nessuna indisponibilità', S.people.length ? 'Registra ferie, permessi o altre assenze.' : 'Aggiungi prima il personale.', S.people.length ? [h('button', { class: 'btn primary', onclick: () => editUnavail() }, ic('plus', 15), 'Nuova assenza')] : [])));
-  return { title: 'Assenze', sub: 'Indisponibilità del personale', actions, body };
-}
-function editUnavail(u, pid) {
-  if (!S.people.length) { toast('Aggiungi prima il personale.', 'warning'); return; }
-  const isNew = !u; const base = S.ui.mode === 'week' ? S.ui.ws : S.ui.month + '-01';
-  const d = u ? U.deepCopy(u) : { id: U.uid('u'), person: pid || unavailFilter || S.people[0].id, from: base, to: base, shifts: null, note: '' };
-  let scope = d.shifts && d.shifts.length ? 'shifts' : 'all'; const sel = new Set(d.shifts || []);
-  const shiftsBox = h('div', { class: 'chips' }); const drawShifts = () => { shiftsBox.replaceChildren(...S.shiftTypes.map(t => h('button', { type: 'button', class: 'fchip' + (sel.has(t.id) ? ' on' : ''), style: shiftVars(t), 'aria-pressed': sel.has(t.id) ? 'true' : 'false', onclick: () => { if (sel.has(t.id)) sel.delete(t.id); else sel.add(t.id); drawShifts(); } }, ic(shiftIconName(t), 13), t.name))); shiftsBox.style.display = scope === 'shifts' ? '' : 'none'; };
-  const scopeBox = h('div', null); const drawScope = () => { scopeBox.replaceChildren(seg([{ value: 'all', label: 'Giornata intera' }, { value: 'shifts', label: 'Solo alcuni turni' }], scope, v => { scope = v; drawScope(); drawShifts(); }, 'Ambito')); }; drawScope(); drawShifts();
-  openModal({ title: isNew ? 'Nuova indisponibilità' : 'Modifica indisponibilità', body: h('div', { class: 'form' },
-    field('Persona', select(S.people.map(p => ({ value: p.id, label: personName(p) })), d.person, v => { d.person = v; })),
-    h('div', { class: 'grid2' }, field('Dal', input('date', d.from, v => { d.from = v; if (d.to < v) { d.to = v; } })), field('Al (incluso)', input('date', d.to, v => { d.to = v; }))),
-    h('div', { class: 'field' }, h('label', null, 'Ambito'), scopeBox, shiftsBox), field('Note', input('text', d.note || '', v => { d.note = v; }, { placeholder: 'Opzionale (es. ferie)' }))),
-    buttons: [{ label: 'Annulla' }, { label: 'Salva', kind: 'primary', onClick: () => {
-      if (!d.from || !d.to) { toast('Inserisci le date.', 'warning'); return false; } if (d.to < d.from) { toast('La data finale precede quella iniziale.', 'warning'); return false; }
-      d.shifts = scope === 'shifts' ? [...sel] : null; if (scope === 'shifts' && !d.shifts.length) { toast('Seleziona almeno un turno oppure «Giornata intera».', 'warning'); return false; }
-      if (isNew) S.unavail.push(d); else Object.assign(u, d); persist(); render(); toast('Indisponibilità salvata'); } }] });
-}
-
 /* ------------------------------------------------------------ impostazioni */
 let setTab = 'general';
 const RULE_GROUPS = [
@@ -2041,7 +2361,7 @@ function viewSettings() {
   if (setTab === 'general') {
     content = h('div', { class: 'stack-v' },
       h('section', { class: 'card' }, h('h3', null, 'Aspetto'), h('div', { class: 'setting' }, h('div', null, h('div', { class: 'strong' }, 'Tema'), h('div', { class: 'hint' }, 'Automatico segue le preferenze del dispositivo')), seg([{ value: 'light', label: 'Chiaro', icon: 'sun' }, { value: 'dark', label: 'Scuro', icon: 'moon' }, { value: 'auto', label: 'Auto' }], S.ui.theme, v => { S.ui.theme = v; applyTheme(); persist(false); render(); }, 'Tema'))),
-      h('section', { class: 'card' }, h('h3', null, 'Programmazione'), field('Nome', input('text', S.meta.name, v => { S.meta.name = v; persist(false); }), 'Compare nei PDF esportati'),
+      h('section', { class: 'card' }, h('h3', null, 'Programmazione'), field('Nome', input('text', S.meta.name, v => { S.meta.name = v; persist(false); }), 'Compare nei PDF e nel nome dei file Excel (es. Turni_Anestesia_Ottobre_2026.xlsx)'),
         h('div', { class: 'field' }, h('label', null, 'Giorni considerati «weekend»'), h('div', { class: 'chips' }, DOW_LONG.map((d, i) => { const on = st.weekendDays.includes(i); return h('button', { class: 'fchip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: () => { st.weekendDays = on ? st.weekendDays.filter(x => x !== i) : [...st.weekendDays, i].sort(); persist(); render(); } }, d.slice(0, 3)); })), h('div', { class: 'hint' }, 'Un turno è «di weekend» se inizia in uno di questi giorni.'))),
       h('section', { class: 'card' }, h('h3', null, 'Peso dei turni'), h('p', { class: 'hint' }, 'Punti per turno usati nel calcolo dell\'equità (es. peso della notte). Modifica qui o in Servizi → Tipologie di turno.'), S.shiftTypes.map(t => h('div', { class: 'setting' }, shiftBadge(t, { time: true }), h('div', { class: 'unit' }, h('input', { class: 'input num', type: 'number', step: 0.5, min: 0, value: t.points, 'aria-label': 'Punti ' + t.name, onchange: e => { t.points = parseFloat(e.target.value) || 0; persist(); } }), h('span', { class: 'muted sm' }, 'punti'))))));
   } else if (setTab === 'rules') {
@@ -2083,9 +2403,529 @@ function helpContent() {
 }
 
 /* =====================================================================
+   ESPORTAZIONE EXCEL (.xlsx) – ExcelJS caricata al bisogno
+   Il file riproduce la tabella dell'app (per persona o per servizio),
+   resta modificabile e usa formattazione condizionale e formule.
+   ===================================================================== */
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+function hsl2hex(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+/* colori dei turni come nell'app (chip chiaro): sfondo e testo */
+function xlShiftColors(t) { const c = hueOf(t.color), s = 58 * c.k; return { bg: hsl2hex(c.h, s, 92), fg: hsl2hex(c.h, s, 26), bd: hsl2hex(c.h, s, 80) }; }
+function xlTint(hex, k) { const n = parseInt(hex.replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(255 - (255 - v) * k).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+const xlFill = rgb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + rgb } });
+const XL = { dark: '1F2430', dark2: '4A5163', we: 'EEF0F4', hol: 'FDEFD2', line: 'D9DDE5', text: '151922', muted: '6B7385', red: 'BD3A2D', redBg: 'FCEBE8' };
+const xlBorder = { top: { style: 'thin', color: { argb: 'FF' + XL.line } }, bottom: { style: 'thin', color: { argb: 'FF' + XL.line } }, left: { style: 'thin', color: { argb: 'FF' + XL.line } }, right: { style: 'thin', color: { argb: 'FF' + XL.line } } };
+const xlDate = iso => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+function xlCol(n) { return Imp.colName(n - 1); }
+function xlDeptSlug() { const n = (S.meta.name || '').trim(); if (!n || /^programmazione turni$/i.test(n)) return ''; return n.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
+function xlFileName(ctx, suffix) {
+  const label = ctx.month ? `${MONTHS_IT[+S.ui.month.slice(5) - 1]}_${S.ui.month.slice(0, 4)}` : `Settimana_${U.fmtDate(S.ui.ws).replace(/\//g, '-')}`;
+  return ['Turni', xlDeptSlug(), label, suffix].filter(Boolean).join('_') + '.xlsx';
+}
+function xlTitle(ws, ctx, P, sheetLabel) {
+  ws.getCell('A1').value = `${S.meta.name} — ${ctx.title}`; ws.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF' + XL.text } };
+  const status = !P.anyCells ? 'Nessun turno richiesto' : !P.complete ? `PROGRAMMAZIONE INCOMPLETA — ${P.uncoveredCount} turni scoperti su ${P.required}` : P.hard.length ? `Completa, con ${P.hard.length} conflitti da risolvere` : 'Programmazione completa e valida';
+  ws.getCell('A2').value = `${sheetLabel} · ${status} · esportato il ${new Date().toLocaleString('it-IT')}`; ws.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF' + (P.complete ? XL.muted : XL.red) }, bold: !P.complete };
+  const notes = ctx.notes.join(' | '); if (notes) { ws.getCell('A3').value = 'Note: ' + notes; ws.getCell('A3').font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF' + XL.muted } }; }
+}
+function xlHeaderStyle(cell, date, wide) {
+  cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }; cell.fill = xlFill(XL.dark); cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; cell.border = xlBorder;
+  if (date) { const dow = U.dow(date), hol = holidayName(date); if (hol) { cell.fill = xlFill('B8791C'); cell.note = 'Festività: ' + hol; } else if (dow >= 5) cell.fill = xlFill(XL.dark2); }
+}
+function xlDayFill(date) { return holidayName(date) ? XL.hol : U.dow(date) >= 5 ? XL.we : null; }
+
+/* ---------- foglio PER PERSONA ---------- */
+function xlPeopleSheet(wb, P, ctx, filtered) {
+  const ws = wb.addWorksheet('Per persona', { views: [{ state: 'frozen', xSplit: 2, ySplit: 5, showGridLines: false }] });
+  const days = ctx.days, codes = shiftCodes(S), f = F(), HR = 5, nd = days.length, c0 = 3, wide = nd <= 7;
+  xlTitle(ws, ctx, P, 'Per persona' + (filtered && filtersActive() ? ' (vista filtrata)' : ''));
+  const byPD = {}; P.weeks.forEach(w => { const wk = S.weeks[w]; if (!wk) return; for (const a of wk.assignments) { if (!ctx.dset.has(a.date)) continue; ((byPD[a.person] || (byPD[a.person] = {}))[a.date] || (byPD[a.person][a.date] = [])).push({ a, ws: w }); } });
+  const passA = a => !filtered || (passShift(a.shift) && passSvc(a.svc));
+  const unav = {}; S.people.forEach(p => { unav[p.id] = Unav.dayMap(S, p.id); });
+  const hasIssue = pid => Object.values(byPD[pid] || {}).flat().some(it => { const i = P.byAssign[it.a.id]; return i && (i.hard.length || i.soft.length); });
+  const people = S.people.filter(p => (p.active !== false || byPD[p.id]) && (!filtered || (personMatches(p) && (!f.persons.length || f.persons.includes(p.id)) && (!f.issues || hasIssue(p.id))))).sort((a, b) => personName(a).localeCompare(personName(b)));
+  const nT = S.shiftTypes.length, sumCols = 1 + nT, lastCol = c0 + nd - 1 + sumCols;
+  // intestazione
+  const hdr = ws.getRow(HR); hdr.height = 30;
+  [['Persona', 1], ['Qualifica', 2]].forEach(([t, c]) => { const x = ws.getCell(HR, c); x.value = t; xlHeaderStyle(x); x.alignment = { horizontal: 'left', vertical: 'middle' }; });
+  days.forEach((d, i) => { const x = ws.getCell(HR, c0 + i); x.value = xlDate(d); x.numFmt = wide ? 'ddd d/mm' : 'ddd d'; xlHeaderStyle(x, d); });
+  const sc = c0 + nd; ws.getCell(HR, sc).value = 'Turni'; S.shiftTypes.forEach((t, i) => { ws.getCell(HR, sc + 1 + i).value = t.name; });
+  for (let c = sc; c <= lastCol; c++) { const x = ws.getCell(HR, c); xlHeaderStyle(x); x.fill = xlFill('2F3A5A'); }
+  // colonne
+  ws.getColumn(1).width = 24; ws.getColumn(2).width = 15; for (let i = 0; i < nd; i++) ws.getColumn(c0 + i).width = wide ? 13 : 7.5; for (let c = sc; c <= lastCol; c++) ws.getColumn(c).width = 10;
+  let r = HR + 1; const firstData = r;
+  // riga "Da coprire"
+  const uncBy = {}; P.uncovered.filter(u => !filtered || (passShift(u.cell.shift) && passSvc(u.cell.svc))).forEach(u => { uncBy[u.cell.date] = (uncBy[u.cell.date] || 0) + u.missing; });
+  if (Object.keys(uncBy).length && (!filtered || (!f.persons.length && !UIx.search.trim()))) {
+    ws.getCell(r, 1).value = 'DA COPRIRE'; ws.getCell(r, 2).value = 'posti scoperti';
+    days.forEach((d, i) => { const x = ws.getCell(r, c0 + i); if (uncBy[d]) x.value = uncBy[d]; });
+    for (let c = 1; c <= lastCol; c++) { const x = ws.getCell(r, c); x.fill = xlFill(XL.redBg); x.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF' + XL.red } }; x.border = xlBorder; x.alignment = { horizontal: c <= 2 ? 'left' : 'center', vertical: 'middle' }; }
+    ws.getRow(r).height = 20; r++;
+  }
+  const lastShift = []; // per le formule
+  for (const p of people) {
+    const row = ws.getRow(r); let maxLines = 1;
+    ws.getCell(r, 1).value = personName(p); ws.getCell(r, 2).value = p.role || '';
+    days.forEach((d, i) => {
+      const x = ws.getCell(r, c0 + i), items = ((byPD[p.id] || {})[d] || []).filter(it => passA(it.a)), u = unav[p.id].get(d);
+      if (items.length) {
+        const lines = items.map(it => { const sv = (P.svc[it.ws] && P.svc[it.ws][it.a.svc]) || { name: svcName(it.a.svc) }; return `${codes[it.a.shift]} ${svcAbbr(sv.name)}`; });
+        x.value = lines.join('\n'); maxLines = Math.max(maxLines, lines.length);
+        const notes = []; items.forEach(it => { const t = shiftById(it.a.shift), sv = (P.svc[it.ws] && P.svc[it.ws][it.a.svc]) || { name: '?' }, bi = P.byAssign[it.a.id]; notes.push(`${sv.name} · ${t.name} ${t.start}–${t.end}${it.a.locked ? ' · BLOCCATO' : ''}`); if (bi) bi.hard.forEach(h => notes.push('CONFLITTO: ' + h.msg.replace(/^[^:]+: /, ''))); });
+        x.note = { texts: [{ text: notes.join('\n') }] };
+        if (items.some(it => { const bi = P.byAssign[it.a.id]; return bi && bi.hard.length; })) { x.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF' + XL.red } }; }
+      } else if (u && !Unav.isEmpty(u)) x.value = u.all ? '✕' : '✕ ' + S.shiftTypes.filter(t => u.shifts.has(t.id)).map(t => codes[t.id]).join(',');
+    });
+    // totali con formule: restano corretti anche se modifichi le celle
+    const rg = `${xlCol(c0)}${r}:${xlCol(c0 + nd - 1)}${r}`;
+    ws.getCell(r, sc).value = { formula: `COUNTA(${rg})-COUNTIF(${rg},"✕*")` };
+    S.shiftTypes.forEach((t, i) => { ws.getCell(r, sc + 1 + i).value = { formula: `COUNTIF(${rg},"${codes[t.id]} *")+COUNTIF(${rg},"${codes[t.id]}")` }; });
+    for (let c = 1; c <= lastCol; c++) {
+      const x = ws.getCell(r, c); x.border = xlBorder;
+      if (c === 1) { x.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF' + XL.text } }; x.alignment = { vertical: 'middle' }; }
+      else if (c === 2) { x.font = { name: 'Calibri', size: 10, color: { argb: 'FF' + XL.muted } }; x.alignment = { vertical: 'middle' }; }
+      else { if (!x.font || !x.font.bold) x.font = { name: 'Calibri', size: 10, color: { argb: 'FF' + (c >= sc ? XL.muted : XL.text) } }; x.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; if (c < sc) { const fl = xlDayFill(days[c - c0]); if (fl) x.fill = xlFill(fl); } else x.fill = xlFill('F6F7FA'); }
+    }
+    row.height = Math.max(22, 15 * maxLines + 6); r++;
+  }
+  const lastRow = Math.max(r - 1, HR + 1);
+  // formattazione condizionale: i colori seguono la sigla anche se la modifichi
+  const ref = `${xlCol(c0)}${firstData}:${xlCol(c0 + nd - 1)}${lastRow}`, tl = `${xlCol(c0)}${firstData}`;
+  const rules = S.shiftTypes.map(t => { const col = xlShiftColors(t), cd = codes[t.id]; return { type: 'expression', formulae: [`OR(${tl}="${cd}",LEFT(${tl},${cd.length + 1})="${cd} ")`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FF' + col.bg } }, font: { bold: true, color: { argb: 'FF' + col.fg } }, border: { top: { style: 'thin', color: { argb: 'FF' + col.bd } }, bottom: { style: 'thin', color: { argb: 'FF' + col.bd } }, left: { style: 'thin', color: { argb: 'FF' + col.bd } }, right: { style: 'thin', color: { argb: 'FF' + col.bd } } } } }; });
+  rules.push({ type: 'expression', formulae: [`LEFT(${tl},1)="✕"`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFE3E5EA' } }, font: { color: { argb: 'FF8A93A2' } } } });
+  ws.addConditionalFormatting({ ref, rules });
+  ws.autoFilter = { from: { row: HR, column: 1 }, to: { row: lastRow, column: lastCol } };
+  ws.pageSetup = { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } };
+  ws.headerFooter = { oddFooter: '&L' + S.meta.name + '&RPagina &P di &N' };
+  return ws;
+}
+
+/* ---------- foglio PER SERVIZIO ---------- */
+function xlServiceSheet(wb, P, ctx, filtered) {
+  const ws = wb.addWorksheet('Per servizio', { views: [{ state: 'frozen', xSplit: 3, ySplit: 5, showGridLines: false }] });
+  const days = ctx.days, f = F(), HR = 5, nd = days.length, c0 = 4, wide = nd <= 7, lastCol = c0 + nd - 1;
+  xlTitle(ws, ctx, P, 'Per servizio' + (filtered && filtersActive() ? ' (vista filtrata)' : ''));
+  const svcs = new Map(), cellMaps = {};
+  P.weeks.forEach(w => { cellMaps[w] = new Map(demandCells(S, w).map(c => [c.key, c])); weekServices(S, w).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { id: sv.id, name: sv.name + (sv.temp ? ' (temp.)' : ''), color: sv.color, rows: new Set() }); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) svcs.get(sv.id).rows.add(t.id); }); }); });
+  const uncMap = {}; P.uncovered.forEach(u => { uncMap[u.key] = u; });
+  const personOK = pid => !filtered || ((!f.persons.length || f.persons.includes(pid)) && (!UIx.search.trim() || personMatches(personById(pid) || {})));
+  const hdr = ws.getRow(HR); hdr.height = 30;
+  ['Servizio', 'Turno', 'Orario'].forEach((t, i) => { const x = ws.getCell(HR, i + 1); x.value = t; xlHeaderStyle(x); x.alignment = { horizontal: 'left', vertical: 'middle' }; });
+  days.forEach((d, i) => { const x = ws.getCell(HR, c0 + i); x.value = xlDate(d); x.numFmt = wide ? 'ddd d/mm' : 'ddd d'; xlHeaderStyle(x, d); });
+  ws.getColumn(1).width = 20; ws.getColumn(2).width = 14; ws.getColumn(3).width = 13; for (let i = 0; i < nd; i++) ws.getColumn(c0 + i).width = wide ? 20 : 14;
+  let r = HR + 1; const firstData = r;
+  for (const sv of svcs.values()) {
+    if (filtered && !passSvc(sv.id)) continue;
+    for (const t of S.shiftTypes) {
+      if (!sv.rows.has(t.id) || (filtered && !passShift(t.id))) continue;
+      const row = ws.getRow(r), col = xlShiftColors(t); let maxLines = 1;
+      ws.getCell(r, 1).value = sv.name; ws.getCell(r, 2).value = t.name; ws.getCell(r, 3).value = `${t.start}–${t.end}`;
+      days.forEach((d, i) => {
+        const x = ws.getCell(r, c0 + i), w = U.monday(d), cell = cellMaps[w].get(cellKey(sv.id, d, t.id)), wk = S.weeks[w] || emptyWeek();
+        if (!cell) { x.value = '—'; x.font = { name: 'Calibri', size: 10, color: { argb: 'FFB5BBC8' } }; x.fill = xlFill('F3F4F7'); return; }
+        const ass = wk.assignments.filter(a => a.svc === sv.id && a.date === d && a.shift === t.id), shown = ass.filter(a => personOK(a.person));
+        const lines = shown.map(a => personName(personById(a.person))); for (let k = ass.length; k < cell.req; k++) lines.push('** SCOPERTO **');
+        x.value = lines.join('\n'); maxLines = Math.max(maxLines, lines.length);
+        const notes = []; ass.forEach(a => { const bi = P.byAssign[a.id]; if (a.locked) notes.push(personName(personById(a.person)) + ': BLOCCATO'); if (bi) bi.hard.forEach(h => notes.push('CONFLITTO: ' + h.msg)); }); if (uncMap[cell.key]) notes.push(uncMap[cell.key].msg);
+        if (notes.length) x.note = { texts: [{ text: notes.join('\n') }] };
+      });
+      for (let c = 1; c <= lastCol; c++) {
+        const x = ws.getCell(r, c); x.border = xlBorder;
+        if (c === 1) { x.fill = xlFill(xlTint(sv.color, 0.42)); x.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF' + XL.text } }; x.alignment = { vertical: 'middle', wrapText: true }; }
+        else if (c === 2) { x.fill = xlFill(col.bg); x.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF' + col.fg } }; x.alignment = { vertical: 'middle' }; }
+        else if (c === 3) { x.font = { name: 'Calibri', size: 10, color: { argb: 'FF' + XL.muted } }; x.alignment = { vertical: 'middle' }; }
+        else { if (!x.fill || !x.fill.fgColor) x.fill = xlFill(xlDayFill(days[c - c0]) || xlTint(sv.color, 0.1)); if (!x.font || !x.font.size) x.font = { name: 'Calibri', size: 10, color: { argb: 'FF' + XL.text } }; x.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; }
+      }
+      row.height = Math.max(24, 15 * maxLines + 6); r++;
+    }
+  }
+  const lastRow = Math.max(r - 1, HR + 1);
+  const tl = `${xlCol(c0)}${firstData}`;
+  ws.addConditionalFormatting({ ref: `${xlCol(c0)}${firstData}:${xlCol(lastCol)}${lastRow}`, rules: [{ type: 'expression', formulae: [`ISNUMBER(SEARCH("SCOPERTO",${tl}))`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FF' + XL.redBg } }, font: { bold: true, color: { argb: 'FF' + XL.red } } } }] });
+  ws.autoFilter = { from: { row: HR, column: 1 }, to: { row: lastRow, column: lastCol } };
+  ws.pageSetup = { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } };
+  ws.headerFooter = { oddFooter: '&L' + S.meta.name + '&RPagina &P di &N' };
+  return ws;
+}
+
+/* ---------- foglio LEGENDA ---------- */
+function xlLegendSheet(wb, P, ctx) {
+  const ws = wb.addWorksheet('Legenda', { views: [{ showGridLines: false }] }), codes = shiftCodes(S);
+  ws.getColumn(1).width = 16; ws.getColumn(2).width = 24; ws.getColumn(3).width = 12; ws.getColumn(4).width = 12; ws.getColumn(5).width = 10; ws.getColumn(6).width = 10; ws.getColumn(7).width = 12;
+  const title = (r, t) => { const x = ws.getCell(r, 1); x.value = t; x.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF' + XL.text } }; };
+  const head = (r, arr) => arr.forEach((t, i) => { const x = ws.getCell(r, i + 1); x.value = t; x.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }; x.fill = xlFill(XL.dark); x.border = xlBorder; });
+  title(1, S.meta.name); ws.getCell('A2').value = ctx.title; ws.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF' + XL.muted } };
+  title(4, 'Tipologie di turno'); head(5, ['Sigla', 'Turno', 'Inizio', 'Fine', 'Ore', 'Punti', 'Notturno']);
+  S.shiftTypes.forEach((t, i) => { const r = 6 + i, col = xlShiftColors(t); [codes[t.id], t.name, t.start, t.end, U.r1(shiftDuration(t)), t.points, t.night ? 'sì' : 'no'].forEach((v, j) => { const x = ws.getCell(r, j + 1); x.value = v; x.border = xlBorder; x.font = { name: 'Calibri', size: 10 }; x.alignment = { horizontal: j === 1 ? 'left' : 'center' }; }); const x = ws.getCell(r, 1); x.fill = xlFill(col.bg); x.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF' + col.fg } }; });
+  let r = 6 + S.shiftTypes.length + 1; title(r, 'Servizi'); r++; head(r, ['Abbreviazione', 'Servizio', 'Attivo', 'Continuità']); r++;
+  S.services.forEach(sv => { [svcAbbr(sv.name), sv.name, sv.active ? 'sì' : 'no', sv.continuity ? 'sì' : 'no'].forEach((v, j) => { const x = ws.getCell(r, j + 1); x.value = v; x.border = xlBorder; x.font = { name: 'Calibri', size: 10 }; x.alignment = { horizontal: j === 1 ? 'left' : 'center' }; }); ws.getCell(r, 1).fill = xlFill(xlTint(sv.color, 0.42)); ws.getCell(r, 2).fill = xlFill(xlTint(sv.color, 0.42)); r++; });
+  r++; title(r, 'Come leggere il file'); r++;
+  [['✕', 'Indisponibile (✕ = tutto il giorno, ✕ seguito dalla sigla = solo quella fascia)'], ['Colonne grigie', 'Weekend'], ['Colonne ambra', 'Festività nazionali'], ['DA COPRIRE', 'Posti scoperti nel giorno'], ['Totali', 'Le colonne finali del foglio «Per persona» sono formule: si aggiornano se modifichi le celle'], ['Note nelle celle', 'Dettagli su servizio, blocchi e conflitti (passa il mouse sul triangolo rosso)']].forEach(([a, b]) => { ws.getCell(r, 1).value = a; ws.getCell(r, 1).font = { name: 'Calibri', size: 10, bold: true }; ws.getCell(r, 2).value = b; ws.getCell(r, 2).font = { name: 'Calibri', size: 10 }; r++; });
+  ws.getCell(r - 5, 1).fill = xlFill(XL.we); ws.getCell(r - 4, 1).fill = xlFill(XL.hol);
+  return ws;
+}
+
+/* ---------- azione ---------- */
+async function exportExcel(scope) {
+  scope = scope || 'view';
+  try { await Libs.excelJS(); } catch (e) { toast('Libreria Excel non raggiungibile: controlla la connessione e riprova.', 'error'); return; }
+  try {
+    const P = periodData(), ctx = pdfContext(S.ui.mode), filtered = scope === 'view';
+    const wb = new ExcelJS.Workbook(); wb.creator = S.meta.name; wb.created = new Date(); wb.title = `${S.meta.name} – ${ctx.title}`;
+    const order = filtered ? [S.ui.group] : [S.ui.group, S.ui.group === 'service' ? 'people' : 'service'];
+    order.forEach(g => (g === 'service' ? xlServiceSheet(wb, P, ctx, filtered) : xlPeopleSheet(wb, P, ctx, filtered)));
+    xlLegendSheet(wb, P, ctx);
+    const buf = await wb.xlsx.writeBuffer();
+    download(xlFileName(ctx, filtered && filtersActive() ? 'filtrato' : ''), buf, XLSX_MIME);
+    toast('File Excel esportato');
+  } catch (e) { console.error(e); toast('Esportazione Excel non riuscita: ' + e.message, 'error'); }
+}
+/* modello per l'importazione delle indisponibilità */
+async function downloadUnavTemplate() {
+  try { await Libs.excelJS(); } catch (e) { toast('Libreria Excel non raggiungibile: controlla la connessione e riprova.', 'error'); return; }
+  const wb = new ExcelJS.Workbook(), ws = wb.addWorksheet('Indisponibilità'), names = S.people.slice(0, 3).map(personName); while (names.length < 3) names.push('Nome Cognome');
+  ws.columns = [{ header: 'Persona', width: 24 }, { header: 'Data', width: 14 }, { header: 'Fascia', width: 20 }, { header: 'Note', width: 28 }];
+  const m = S.ui.month; const rows = [[names[0], xlDate(m + '-01'), S.shiftTypes[0].name, ''], [names[0], xlDate(m + '-02'), S.shiftTypes[S.shiftTypes.length - 1].name, ''], [names[1], xlDate(m + '-03'), 'Tutto il giorno', 'ferie'], [names[2], xlDate(m + '-10'), (S.shiftTypes[1] || S.shiftTypes[0]).name, '']];
+  rows.forEach(r => ws.addRow(r)); ws.getColumn(2).numFmt = 'dd/mm/yyyy';
+  ws.getRow(1).eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = xlFill(XL.dark); });
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  for (let r = 2; r <= 500; r++) ws.getCell(r, 3).dataValidation = { type: 'list', allowBlank: true, formulae: ['"' + S.shiftTypes.map(t => t.name).concat(['Tutto il giorno']).join(',') + '"'] };
+  const is = wb.addWorksheet('Istruzioni'); is.getColumn(1).width = 100;
+  ['Una riga per ogni indisponibilità: Persona, Data, Fascia (Mattina, Pomeriggio, Notte, Tutto il giorno).', 'Puoi usare anche le sigle (M, P, N, T) e indicare più fasce nella stessa cella (es. «M, N»).', 'Per un periodo aggiungi una colonna «Al» con la data finale.', 'Accettato anche il formato a griglia: una riga per persona e una colonna per giorno, con le sigle nelle celle.', 'Se il file non viene riconosciuto, l\'app ti guida nell\'associare le colonne prima di importare.'].forEach(t => is.addRow([t]));
+  download('Modello_indisponibilita.xlsx', await wb.xlsx.writeBuffer(), XLSX_MIME); toast('Modello scaricato');
+}
+
+/* =====================================================================
+   INDISPONIBILITÀ – interfaccia: calendario, selezione multipla, periodo,
+   elenco e importazione guidata da Excel. Usa solo Unav/Imp per i dati.
+   ===================================================================== */
+UIx.unavTab = 'calendar'; UIx.unavMulti = false; UIx.unavSel = new Set(); UIx.unavFasce = { all: false, shifts: new Set() }; UIx.unavPF = { all: false, shifts: new Set() };
+UIx.unavPerson = null; UIx.unavMonth = null; UIx.unavListFilter = ''; UIx.unavLast = null; UIx.unavPeriod = null;
+
+/* chip di scelta fascia (riusati nel popover, nella selezione multipla e nel periodo) */
+function fasciaChips(isOn, onToggle, opts) {
+  opts = opts || {};
+  const mk = (key, label, icon, vars) => { const on = isOn(key); return h('button', { type: 'button', class: 'fchip fasce' + (on ? ' on' : '') + (key === 'all' ? ' all' : ''), style: vars || null, 'aria-pressed': on ? 'true' : 'false', onclick: () => onToggle(key) }, ic(icon, 14), label); };
+  return h('div', { class: 'chips' }, S.shiftTypes.map(t => mk(t.id, t.name, shiftIconName(t), shiftVars(t))), opts.noAll ? null : mk('all', 'Tutto il giorno', 'ban'));
+}
+function toggleFasce(st, key) {
+  if (key === 'all') { st.all = !st.all; if (st.all) st.shifts = new Set(); }
+  else { st.all = false; if (st.shifts.has(key)) st.shifts.delete(key); else st.shifts.add(key); }
+}
+const fasceSpec = st => ({ all: st.all, shifts: [...st.shifts] });
+const fasceEmpty = st => !st.all && !st.shifts.size;
+function fasceLabel(spec) { return spec.all ? 'Tutto il giorno' : S.shiftTypes.filter(t => spec.shifts.includes(t.id)).map(t => t.name).join(' + '); }
+function openUnavFor(pid, ym) { UIx.unavPerson = pid; UIx.unavTab = 'calendar'; if (ym) UIx.unavMonth = ym; go('absences'); }
+
+/* ---------------------------------------------------------------- vista */
+function viewAbsences() {
+  const people = [...S.people].sort((a, b) => personName(a).localeCompare(personName(b)));
+  if (!UIx.unavPerson || !personById(UIx.unavPerson)) UIx.unavPerson = people[0] ? people[0].id : null;
+  if (!UIx.unavMonth) UIx.unavMonth = S.ui.month;
+  const actions = [h('button', { class: 'btn', onclick: () => openUnavImport() }, ic('upload', 16), h('span', { class: 'lbl' }, 'Importa da Excel'))];
+  if (!people.length) return { title: 'Indisponibilità', sub: 'Assenze del personale', actions, body: h('div', { class: 'card' }, emptyState('users', 'Prima aggiungi il personale', 'Le indisponibilità si inseriscono per persona.', [h('button', { class: 'btn primary', onclick: () => go('people') }, ic('plus', 15), 'Aggiungi personale')])) };
+  const body = h('div', null, h('div', { class: 'toolbar' }, tabs([['calendar', 'Calendario'], ['list', 'Elenco', S.unavail.length]], UIx.unavTab, k => { UIx.unavTab = k; UIx.anim = true; render(); })),
+    UIx.unavTab === 'calendar' ? unavCalendarView(people) : unavListView());
+  return { title: 'Indisponibilità', sub: UIx.unavTab === 'calendar' ? monthLabel(UIx.unavMonth) : 'Elenco', actions, body };
+}
+
+function unavCalendarView(people) {
+  const box = h('div', { class: 'uwrap' });
+  const pid = () => UIx.unavPerson, ym = () => UIx.unavMonth;
+  const today = U.today();
+  const refresh = () => { box.replaceChildren(...build()); box.classList.toggle('has-ubar', !!UIx.unavMulti); updateTitle(); };
+  const updateTitle = () => { const s = document.querySelector('.tb-sub'); if (s) s.textContent = monthLabel(ym()); };
+  const changed = (label, bulk) => { persist(); refresh(); if (bulk) toast(label, 'success', { label: 'Annulla', onClick: undoLast }); };
+  const setMonth = n => { UIx.unavMonth = n; UIx.unavSel = new Set(); refresh(); };
+  const stateOf = d => Unav.dayMap(S, pid()).get(d);
+
+  /* ---- popover del singolo giorno ---- */
+  const dayPopover = (anchor, date) => popover(anchor, (close, rebuild) => {
+    const x = stateOf(date) || { all: false, shifts: new Set() }, dow = U.dow(date), hol = holidayName(date);
+    const isOn = k => (k === 'all' ? x.all : x.all || x.shifts.has(k));
+    const onToggle = k => {
+      pushUndo('indisponibilità');
+      if (k === 'all') Unav.apply(S, pid(), [date], { all: true, shifts: [] }, x.all ? 'remove' : 'add');
+      else Unav.apply(S, pid(), [date], { all: false, shifts: [k] }, isOn(k) ? 'remove' : 'add');
+      persist(); refresh(); rebuild();
+    };
+    const has = x.all || x.shifts.size;
+    return h('div', { class: 'pop-body' }, h('div', { class: 'pop-head' }, avatar(personById(pid()), 'sm'), h('div', null, h('div', { class: 'pname' }, `${DOW_LONG[dow]} ${+date.slice(8)} ${MONTHS_IT[+date.slice(5, 7) - 1].toLowerCase()}`), h('div', { class: 'muted xs' }, personName(personById(pid())) + (hol ? ' · ' + hol : '')))),
+      h('div', { class: 'pop-t' }, 'Indisponibile per'), fasciaChips(isOn, onToggle),
+      h('div', { class: 'pop-f' }, h('button', { class: 'btn ghost sm', disabled: !has, onclick: () => { pushUndo('indisponibilità'); Unav.apply(S, pid(), [date], { all: true, shifts: [] }, 'remove'); persist(); refresh(); rebuild(); } }, ic('trash', 14), 'Libera il giorno'), h('button', { class: 'btn sm primary', onclick: close }, 'Fatto')));
+  }, { key: 'uday', persist: true, label: 'Indisponibilità del giorno', focus: false });
+
+  /* ---- clic su un giorno ---- */
+  const onDay = (e, date) => {
+    if (!UIx.unavMulti) return dayPopover(e.currentTarget, date);
+    if (e.shiftKey && UIx.unavLast) { const [a, b] = [UIx.unavLast, date].sort(); Unav.datesBetween(a, b).filter(d => d.slice(0, 7) === ym()).forEach(d => UIx.unavSel.add(d)); }
+    else if (UIx.unavSel.has(date)) UIx.unavSel.delete(date); else UIx.unavSel.add(date);
+    UIx.unavLast = date; refresh();
+  };
+
+  const build = () => {
+    const p = personById(pid()), days = monthDays(ym()), first = days[0], lead = U.dow(first), dm = Unav.dayMap(S, pid());
+    const idx = people.findIndex(x => x.id === pid());
+    // barra persona + mese
+    const personBar = h('div', { class: 'toolbar utool' },
+      h('div', { class: 'upers' }, avatar(p), select(people.map(x => ({ value: x.id, label: personName(x) })), pid(), v => { UIx.unavPerson = v; UIx.unavSel = new Set(); refresh(); }, { 'aria-label': 'Persona' }),
+        h('button', { class: 'btn icon ghost', 'aria-label': 'Persona precedente', disabled: idx <= 0, onclick: () => { UIx.unavPerson = people[idx - 1].id; UIx.unavSel = new Set(); refresh(); } }, ic('chevL', 18)),
+        h('button', { class: 'btn icon ghost', 'aria-label': 'Persona successiva', disabled: idx >= people.length - 1, onclick: () => { UIx.unavPerson = people[idx + 1].id; UIx.unavSel = new Set(); refresh(); } }, ic('chevR', 18))),
+      h('div', { class: 'spacer' }),
+      seg([{ value: 'single', label: 'Giorno singolo', icon: 'calendar' }, { value: 'multi', label: 'Più giorni', icon: 'check' }], UIx.unavMulti ? 'multi' : 'single', v => { UIx.unavMulti = v === 'multi'; UIx.unavSel = new Set(); UIx.unavLast = null; closePopover(); refresh(); }, 'Modalità di selezione'));
+    const nav = h('div', { class: 'row gap-1 nav unav-nav' },
+      h('button', { class: 'btn icon', 'aria-label': 'Mese precedente', onclick: () => setMonth(addMonths(ym(), -1)) }, ic('chevL', 18)),
+      h('button', { class: 'btn period-btn', 'data-pop': 'upm', onclick: e => popover(e.currentTarget, close => h('div', { class: 'pop-body' }, h('div', { class: 'pop-t' }, 'Vai al mese'), input('month', ym(), v => { if (v) { close(); setMonth(v.slice(0, 7)); } }, { 'aria-label': 'Scegli il mese' })), { key: 'upm', label: 'Scegli mese' }) }, ic('calendar', 15), h('span', null, monthLabel(ym())), ic('chevD', 14)),
+      h('button', { class: 'btn icon', 'aria-label': 'Mese successivo', onclick: () => setMonth(addMonths(ym(), 1)) }, ic('chevR', 18)),
+      h('button', { class: 'btn', onclick: () => setMonth(today.slice(0, 7)) }, 'Oggi'));
+    // griglia calendario
+    const cells = [];
+    for (let i = 0; i < lead; i++) cells.push(h('div', { class: 'ucell blank', 'aria-hidden': 'true' }));
+    for (const d of days) {
+      const x = dm.get(d), dow = U.dow(d), hol = holidayName(d), on = x && !Unav.isEmpty(x), sel = UIx.unavSel.has(d);
+      const desc = on ? (x.all ? 'tutto il giorno' : S.shiftTypes.filter(t => x.shifts.has(t.id)).map(t => t.name).join(' e ')) : 'libero';
+      const inds = on ? (x.all ? [h('span', { class: 'uind all' }, ic('ban', 12), h('span', { class: 'uind-t' }, 'Tutto'))] : S.shiftTypes.filter(t => x.shifts.has(t.id)).map(t => h('span', { class: 'uind', style: shiftVars(t), title: t.name }, ic(shiftIconName(t), 12)))) : [];
+      cells.push(h('button', { class: 'ucell' + (dow >= 5 ? ' we' : '') + (hol ? ' hol' : '') + (d === today ? ' today' : '') + (on ? (x.all ? ' all' : ' part') : '') + (sel ? ' sel' : ''), 'data-date': d, title: (hol ? hol + ' · ' : '') + desc, 'aria-label': `${DOW_LONG[dow]} ${+d.slice(8)} ${MONTHS_IT[+d.slice(5, 7) - 1]}: ${desc}${sel ? ', selezionato' : ''}`, 'aria-pressed': UIx.unavMulti ? (sel ? 'true' : 'false') : null, onclick: e => onDay(e, d) },
+        h('span', { class: 'dn' }, +d.slice(8)), hol ? h('i', { class: 'hdot' }) : null, h('span', { class: 'uinds' }, inds)));
+    }
+    const grid = h('div', { class: 'ucal-grid', role: 'group', 'aria-label': 'Giorni del mese' }, DOW_SHORT.map((x, i) => h('div', { class: 'uwd' + (i >= 5 ? ' we' : '') }, x)), cells);
+    // barra selezione multipla
+    const nSel = UIx.unavSel.size, F2 = UIx.unavFasce;
+    const multiBar = UIx.unavMulti ? h('div', { class: 'ubar' }, h('div', { class: 'ubar-t' }, h('strong', null, nSel), nSel === 1 ? ' giorno selezionato' : ' giorni selezionati', nSel ? h('button', { class: 'btn ghost sm', onclick: () => { UIx.unavSel = new Set(); refresh(); } }, 'Deseleziona') : h('span', { class: 'muted sm' }, ' — tocca i giorni da modificare (Maiusc+clic per un intervallo)')),
+      fasciaChips(k => (k === 'all' ? F2.all : F2.shifts.has(k)), k => { toggleFasce(F2, k); refresh(); }),
+      h('div', { class: 'row gap-2' }, h('button', { class: 'btn primary', disabled: !nSel || fasceEmpty(F2), onclick: () => { const ds = [...UIx.unavSel].sort(); pushUndo('indisponibilità'); Unav.apply(S, pid(), ds, fasceSpec(F2), 'add'); UIx.unavSel = new Set(); changed(`${ds.length} ${ds.length === 1 ? 'giorno' : 'giorni'} · ${fasceLabel(fasceSpec(F2))}`, true); } }, ic('plus', 15), 'Aggiungi'),
+        h('button', { class: 'btn danger', disabled: !nSel || fasceEmpty(F2), onclick: () => { const ds = [...UIx.unavSel].sort(); pushUndo('indisponibilità'); Unav.apply(S, pid(), ds, fasceSpec(F2), 'remove'); UIx.unavSel = new Set(); changed(`Rimosso ${fasceLabel(fasceSpec(F2))} da ${ds.length} ${ds.length === 1 ? 'giorno' : 'giorni'}`, true); } }, 'Rimuovi fascia'),
+        h('button', { class: 'btn ghost', disabled: !nSel, onclick: () => { const ds = [...UIx.unavSel].sort(); pushUndo('indisponibilità'); Unav.apply(S, pid(), ds, { all: true, shifts: [] }, 'remove'); UIx.unavSel = new Set(); changed(`${ds.length} giorni liberati`, true); } }, 'Libera giorni'))) : null;
+    const legend = h('div', { class: 'legend' }, S.shiftTypes.map(t => h('span', { class: 'lgi' }, h('span', { class: 'uind', style: shiftVars(t) }, ic(shiftIconName(t), 12)), t.name)), h('span', { class: 'lgi' }, h('span', { class: 'uind all' }, ic('ban', 12)), 'Tutto il giorno'), h('span', { class: 'lgi' }, h('i', { class: 'hdot static' }), 'Festività'), h('span', { class: 'lgi muted' }, UIx.unavMulti ? 'Tocca i giorni, scegli la fascia, poi Aggiungi' : 'Tocca un giorno per scegliere la fascia'));
+    const main = h('div', { class: 'ucol' }, personBar, h('section', { class: 'card ucard' }, nav, grid, legend), multiBar);
+
+    // pannello laterale: periodo + riepilogo
+    const PF = UIx.unavPF; const per = UIx.unavPeriod || (UIx.unavPeriod = {}); if (!per.from || per.from.slice(0, 7) !== ym() && !per.touched) { per.from = ym() + '-01'; per.to = days[days.length - 1]; }
+    const err = h('div', { class: 'msg err', hidden: true });
+    const applyPeriod = mode => {
+      if (!per.from || !per.to) { err.hidden = false; err.replaceChildren(ic('alert', 13), 'Inserisci le due date.'); return; }
+      if (per.to < per.from) { err.hidden = false; err.replaceChildren(ic('alert', 13), 'La data finale precede quella iniziale.'); return; }
+      if (fasceEmpty(PF)) { err.hidden = false; err.replaceChildren(ic('alert', 13), 'Scegli almeno una fascia.'); return; }
+      const ds = Unav.datesBetween(per.from, per.to); pushUndo('indisponibilità'); Unav.apply(S, pid(), ds, fasceSpec(PF), mode);
+      UIx.unavMonth = per.from.slice(0, 7); per.touched = false;
+      changed(`${mode === 'add' ? 'Inserito' : 'Rimosso'}: ${U.fmtShort(per.from)}–${U.fmtShort(per.to)} · ${fasceLabel(fasceSpec(PF))} (${ds.length} giorni)`, true);
+    };
+    const periodo = h('section', { class: 'card uside' }, h('h3', null, 'Periodo'), h('p', { class: 'hint pad-b' }, 'Per più giorni consecutivi: es. «Notte dal 10 al 20».'),
+      h('div', { class: 'grid2' }, field('Da', input('date', per.from, v => { per.from = v; per.touched = true; if (per.to < v) { per.to = v; } }, { 'aria-label': 'Data iniziale' })), field('A', input('date', per.to, v => { per.to = v; per.touched = true; }, { 'aria-label': 'Data finale' }))),
+      h('div', { class: 'field' }, h('label', null, 'Fascia'), fasciaChips(k => (k === 'all' ? PF.all : PF.shifts.has(k)), k => { toggleFasce(PF, k); err.hidden = true; refresh(); })), err,
+      h('div', { class: 'row gap-2' }, h('button', { class: 'btn primary grow', onclick: () => applyPeriod('add') }, 'Applica'), h('button', { class: 'btn', onclick: () => applyPeriod('remove') }, 'Rimuovi')));
+    const sum = Unav.monthSummary(S, pid(), ym());
+    const ranges = S.unavail.filter(e => e.person === pid() && e.to >= ym() + '-01' && e.from <= days[days.length - 1]).sort((a, b) => a.from.localeCompare(b.from));
+    const riepilogo = h('section', { class: 'card uside' }, h('div', { class: 'card-h' }, h('h3', null, 'Riepilogo del mese'), sum.days ? h('button', { class: 'btn ghost sm danger', onclick: async () => { if (await confirmBox(`Verranno cancellate tutte le indisponibilità di ${personName(p)} per ${monthLabel(ym())}.`, 'Cancella mese', true, 'Cancellare il mese?')) { pushUndo('cancellazione mese'); const n = Unav.clearMonth(S, pid(), ym()); changed(`${n} giorni cancellati`, true); } } }, 'Cancella mese') : null),
+      sum.days ? h('div', null, h('div', { class: 'row wrap gap-2 pad-b' }, h('strong', null, sum.days + (sum.days === 1 ? ' giorno' : ' giorni')), S.shiftTypes.filter(t => sum.byShift[t.id]).map(t => h('span', { class: 'shift sm', style: shiftVars(t) }, ic(shiftIconName(t), 12), t.name + ' ' + sum.byShift[t.id])), sum.all ? badge('Tutto il giorno ' + sum.all, 'err') : null),
+        h('div', { class: 'uranges' }, ranges.map(e => h('div', { class: 'urange' }, h('div', { class: 'grow' }, h('div', { class: 'strong tnum' }, e.from === e.to ? U.fmtShort(e.from) : `${U.fmtShort(e.from)} – ${U.fmtShort(e.to)}`), h('div', { class: 'row wrap gap-1' }, e.shifts && e.shifts.length ? e.shifts.map(id => shiftById(id)).filter(Boolean).map(t => h('span', { class: 'shift sm', style: shiftVars(t) }, ic(shiftIconName(t), 12), t.name)) : badge('Tutto il giorno', 'err'), e.note ? h('span', { class: 'muted xs' }, e.note) : null)),
+          h('button', { class: 'btn icon ghost sm', 'aria-label': 'Elimina intervallo', onclick: () => { pushUndo('indisponibilità'); Unav.apply(S, pid(), Unav.datesBetween(e.from, e.to), e.shifts && e.shifts.length ? { all: false, shifts: e.shifts } : { all: true, shifts: [] }, 'remove'); changed('Intervallo eliminato', true); } }, ic('trash', 14)))))) : h('p', { class: 'hint' }, 'Nessuna indisponibilità in questo mese. Tocca un giorno nel calendario oppure usa «Periodo».'));
+    return [main, h('div', { class: 'ucol side' }, periodo, riepilogo)];
+  };
+  refresh();
+  return box;
+}
+
+/* ------------------------------------------------------------- elenco */
+function unavListView() {
+  const today = U.today(), list = S.unavail.filter(u => !UIx.unavListFilter || u.person === UIx.unavListFilter).sort((a, b) => a.from.localeCompare(b.from));
+  return h('div', null, h('div', { class: 'toolbar' }, select([{ value: '', label: 'Tutte le persone' }].concat(S.people.map(p => ({ value: p.id, label: personName(p) }))), UIx.unavListFilter, v => { UIx.unavListFilter = v; render(); }, { 'aria-label': 'Filtra per persona', class: 'input select auto' }), h('span', { class: 'muted sm' }, `${list.length} ${list.length === 1 ? 'voce' : 'voci'}`)),
+    h('p', { class: 'hint pad-b' }, 'Sono vincoli obbligatori: il generatore non assegna mai una persona in una fascia in cui è indisponibile. Per modificare apri il calendario della persona.'),
+    list.length ? h('div', { class: 'list card pad0' }, list.map(u => { const p = personById(u.person), past = u.to < today, now = u.from <= today && today <= u.to;
+      return h('div', { class: 'li' + (past ? ' inactive' : '') }, h('div', { class: 'li-main' }, avatar(p), h('div', null, h('div', { class: 'strong' }, personName(p)), h('div', { class: 'muted sm tnum' }, u.from === u.to ? U.fmtDate(u.from) : `${U.fmtDate(u.from)} → ${U.fmtDate(u.to)}`, u.note ? ' · ' + u.note : ''))),
+        h('div', { class: 'li-chips' }, u.shifts && u.shifts.length ? u.shifts.map(s => shiftById(s)).filter(Boolean).map(t => shiftBadge(t, { sm: true })) : badge('Tutto il giorno'), now ? badge('In corso', 'warn') : past ? badge('Conclusa') : null),
+        h('div', { class: 'li-act' }, h('button', { class: 'btn icon ghost', 'aria-label': 'Azioni', 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, [{ icon: 'calendar', label: 'Apri nel calendario', onClick: () => openUnavFor(u.person, u.from.slice(0, 7)) }, '-', { icon: 'trash', label: 'Elimina', danger: true, onClick: () => { pushUndo('indisponibilità'); S.unavail = S.unavail.filter(x => x !== u); persist(); render(); toast('Indisponibilità eliminata', 'success', { label: 'Annulla', onClick: undoLast }); } }]) }, ic('more', 18)))); }))
+      : h('div', { class: 'card' }, emptyState('userx', 'Nessuna indisponibilità', 'Aprila dal calendario o importa un file Excel.', [h('button', { class: 'btn primary', onclick: () => { UIx.unavTab = 'calendar'; render(); } }, ic('calendar', 15), 'Apri il calendario'), h('button', { class: 'btn', onclick: () => openUnavImport() }, ic('upload', 15), 'Importa da Excel')])));
+}
+
+/* =====================================================================
+   IMPORTAZIONE GUIDATA
+   ===================================================================== */
+function openUnavImport(initialFile) {
+  const st = { step: 'file', fileName: '', sheets: [], sheetIdx: 0, mp: null, det: null, ex: null, names: {}, conflictMode: 'both', over: {}, skip: new Set(), result: null, busy: '', error: '' };
+  const body = h('div', { class: 'wiz' });
+  let closeFn;
+  const refMonth = () => { const [y, m] = (UIx.unavMonth || S.ui.month).split('-').map(Number); return { y, m }; };
+  const sheet = () => st.sheets[st.sheetIdx];
+
+  /* ---- lettura del file ---- */
+  const loadFile = async file => {
+    st.busy = 'Lettura del file…'; st.error = ''; st.fileName = file.name; draw();
+    try {
+      await Libs.sheetJS();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      st.sheets = wb.SheetNames.map(n => ({ name: n, matrix: Imp.readSheet(XLSX, wb.Sheets[n]) })).filter(s => s.matrix.length);
+      if (!st.sheets.length) throw new Error('Il file non contiene dati.');
+      st.sheets.forEach(s => { s.det = Imp.detect(s.matrix, S, refMonth(), s.name); });
+      let bi = 0, bs = -1; st.sheets.forEach((s, i) => { const sc = s.det.found ? s.det.score + (s.det.confidence === 'high' ? 1000 : s.det.confidence === 'medium' ? 500 : 0) : -1; if (sc > bs) { bs = sc; bi = i; } });
+      st.sheetIdx = bi; st.busy = ''; pickSheet();
+    } catch (e) { console.error(e); st.busy = ''; st.error = e.message && /raggiungibile/.test(e.message) ? 'Libreria Excel non raggiungibile: controlla la connessione e riprova.' : 'Impossibile leggere il file: ' + e.message; st.step = 'file'; draw(); }
+  };
+  const pickSheet = () => {
+    const s = sheet(); st.det = s.det;
+    if (s.det.found && s.det.confidence !== 'low') { st.mp = Object.assign({}, s.det); runExtract(); }
+    else { st.mp = s.det.found ? Object.assign({}, s.det) : { mode: 'long', headerRow: 0, ref: refMonth() }; st.step = 'map'; draw(); }
+  };
+  const runExtract = () => { st.ex = Imp.extract(sheet().matrix, st.mp, S); st.names = {}; st.over = {}; st.skip = new Set(); st.step = 'preview'; draw(); };
+
+  /* ---- passo: file ---- */
+  const stepFile = () => {
+    const inp = h('input', { type: 'file', accept: '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel', hidden: true, onchange: e => { const f = e.target.files[0]; if (f) loadFile(f); } });
+    const dz = h('div', { class: 'dz', tabindex: 0, role: 'button', 'aria-label': 'Scegli un file Excel', onclick: () => inp.click(), onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); } } },
+      ic('upload', 28), h('div', { class: 'strong' }, 'Scegli un file Excel'), h('div', { class: 'muted sm' }, 'oppure trascinalo qui · .xlsx, .xls, .csv'), inp);
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); }); dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+    return [h('p', { class: 'muted' }, 'Il formato viene riconosciuto automaticamente: elenco (Persona · Data · Fascia) oppure griglia (una riga per persona, una colonna per giorno). Prima di importare vedrai un riepilogo.'), dz,
+      st.error ? h('div', { class: 'msg err' }, ic('alert', 14), st.error) : null,
+      h('div', { class: 'row between wiz-links' }, h('button', { class: 'btn ghost sm', onclick: downloadUnavTemplate }, ic('download', 14), 'Scarica un modello Excel'), h('span', { class: 'muted xs' }, 'I dati restano sul tuo dispositivo'))];
+  };
+
+  /* ---- passo: mappatura manuale ---- */
+  const stepMap = () => {
+    const s = sheet(), mp = st.mp, mx = mp.mode === 'wide' && mp.transposed ? Imp.transpose(s.matrix) : s.matrix, width = Math.min(26, Math.max(0, ...mx.map(r => r.length)));
+    const hdr = mx[mp.headerRow] || [];
+    const colOpts = (required) => [{ value: '', label: required ? '— scegli —' : '— nessuna —' }].concat(Array.from({ length: width }, (_, i) => ({ value: String(i), label: `${Imp.colName(i)} — ${Imp.text(hdr[i]) || '(vuota)'}`.slice(0, 40) })));
+    const setCol = k => v => { mp[k] = v === '' ? undefined : +v; draw(); };
+    const raw = h('div', { class: 'scroll-x rawwrap' }, h('table', { class: 'rawtbl' }, h('thead', null, h('tr', null, h('th', null, '#'), Array.from({ length: Math.min(width, 10) }, (_, i) => h('th', null, Imp.colName(i))))),
+      h('tbody', null, mx.slice(0, 10).map((r, ri) => h('tr', { class: ri === mp.headerRow ? 'hdr' : '', tabindex: 0, title: 'Clicca per usare questa riga come intestazione', onclick: () => { mp.headerRow = ri; if (mp.mode === 'wide') mp.dayCols = Imp.dayCols(mx, ri); draw(); } }, h('th', null, ri + 1), Array.from({ length: Math.min(width, 10) }, (_, i) => h('td', null, Imp.text(r[i]).slice(0, 18))))))));
+    if (mp.mode === 'wide' && !mp.dayCols) mp.dayCols = Imp.dayCols(mx, mp.headerRow);
+    const fields = mp.mode === 'long'
+      ? h('div', { class: 'grid2' }, field('Persona *', select(colOpts(true), mp.person === undefined ? '' : String(mp.person), setCol('person'))), field('Data *', select(colOpts(true), mp.date === undefined ? '' : String(mp.date), setCol('date'))),
+        field('Data fine (facoltativa)', select(colOpts(false), mp.to === undefined ? '' : String(mp.to), setCol('to'))), field('Fascia', select(colOpts(false), mp.shift === undefined ? '' : String(mp.shift), setCol('shift')), 'Se non indicata: tutto il giorno'),
+        field('Note (facoltative)', select(colOpts(false), mp.note === undefined ? '' : String(mp.note), setCol('note'))))
+      : h('div', null, h('div', { class: 'grid2' }, field('Colonna dei nomi *', select(colOpts(true), mp.nameCol === undefined ? '' : String(mp.nameCol), setCol('nameCol'))), field('Mese dei giorni numerici', input('month', `${mp.ref.y}-${U.pad(mp.ref.m)}`, v => { if (v) mp.ref = { y: +v.slice(0, 4), m: +v.slice(5, 7) }; }), 'Usato se l\'intestazione contiene solo 1, 2, 3…')),
+        h('div', { class: 'setting' }, h('div', null, h('div', { class: 'strong' }, 'Giorni sulle righe'), h('div', { class: 'hint' }, 'Attiva se i giorni sono nella prima colonna e le persone nelle colonne')), switchEl(!!mp.transposed, v => { mp.transposed = v; mp.dayCols = null; mp.headerRow = 0; draw(); }, null, { 'aria-label': 'Giorni sulle righe' })),
+        h('div', { class: 'msg ' + ((mp.dayCols || []).length >= 5 ? 'ok' : 'err') }, ic((mp.dayCols || []).length >= 5 ? 'check' : 'alert', 13), `${(mp.dayCols || []).length} colonne di giorno riconosciute nella riga ${mp.headerRow + 1}`));
+    const valid = mp.mode === 'long' ? mp.person !== undefined && mp.date !== undefined : mp.nameCol !== undefined && (mp.dayCols || []).length >= 1;
+    return [h('div', { class: 'msg warn' }, ic('info', 13), 'Non sono riuscito a riconoscere il formato con certezza: associa le colonne per continuare. Nulla è stato importato.'),
+      st.sheets.length > 1 ? field('Foglio', select(st.sheets.map((x, i) => ({ value: i, label: x.name })), st.sheetIdx, v => { st.sheetIdx = +v; st.det = sheet().det; st.mp = sheet().det.found ? Object.assign({}, sheet().det) : { mode: mp.mode, headerRow: 0, ref: refMonth() }; draw(); })) : null,
+      h('div', { class: 'field' }, h('label', null, 'Struttura del file'), seg([{ value: 'long', label: 'Elenco (una riga per voce)' }, { value: 'wide', label: 'Griglia (persone × giorni)' }], mp.mode, v => { mp.mode = v; if (v === 'wide') { mp.nameCol = mp.nameCol === undefined ? 0 : mp.nameCol; mp.dayCols = null; mp.ref = mp.ref || refMonth(); } draw(); }, 'Struttura')),
+      h('div', { class: 'field' }, h('label', null, 'Riga delle intestazioni — clicca la riga giusta'), raw), fields, { valid }];
+  };
+
+  /* ---- analisi per l'anteprima ---- */
+  const analyze = () => {
+    const match = Imp.personMatcher(S), info = new Map(), maps = new Map(), sh = S.shiftTypes;
+    st.ex.records.forEach(r => { let i = info.get(r.personText); if (!i) { i = { text: r.personText, res: match(r.personText), n: 0 }; info.set(r.personText, i); } i.n++; });
+    const resolve = t => { const c = st.names[t]; if (c !== undefined) return c; const i = info.get(t); return i.res.status === 'ok' ? i.res.id : ''; };
+    const items = new Map();
+    for (const r of st.ex.records) {
+      const c = resolve(r.personText); if (!c || c === 'ignore') continue;
+      const pid = c === 'new' ? 'new:' + r.personText : c, key = pid + '|' + r.date; let it = items.get(key);
+      if (!it) { it = { key, pid, date: r.date, mask: { all: false, shifts: new Set() }, text: r.personText }; items.set(key, it); }
+      if (r.mask.all) { it.mask.all = true; it.mask.shifts = new Set(); } else if (!it.mask.all) r.mask.shifts.forEach(x => it.mask.shifts.add(x));
+    }
+    for (const it of items.values()) {
+      if (it.pid.startsWith('new:')) { it.status = 'new'; continue; }
+      if (!maps.has(it.pid)) maps.set(it.pid, Unav.dayMap(S, it.pid));
+      const ex = maps.get(it.pid).get(it.date); it.existing = ex;
+      it.status = Unav.isEmpty(ex) ? 'new' : Unav.covers(ex, it.mask) ? 'dup' : Unav.covers(it.mask, ex) ? 'extend' : 'conflict';
+      if (it.status === 'extend') it.status = 'extend';
+    }
+    const total = new Set(st.ex.records.map(r => r.personText + '|' + r.date)).size;
+    const decision = it => it.status === 'conflict' ? (st.over[it.key] || st.conflictMode) : 'add';
+    const active = it => it.status !== 'dup' && !st.skip.has(it.key) && !(it.status === 'conflict' && decision(it) === 'keep');
+    const counts = { new: 0, extend: 0, dup: 0, conflict: 0 }; items.forEach(it => { counts[it.status]++; });
+    const toApply = [...items.values()].filter(active);
+    return { info, resolve, items, total, counts, toApply, decision, active, unresolved: [...info.values()].filter(i => !resolve(i.text)) };
+  };
+  const maskLabel = m => m.all ? 'Tutto il giorno' : S.shiftTypes.filter(t => m.shifts.has(t.id)).map(t => t.name).join(' + ');
+  const maskChips = m => m.all ? badge('Tutto il giorno', 'err') : h('span', { class: 'row wrap gap-1' }, S.shiftTypes.filter(t => m.shifts.has(t.id)).map(t => h('span', { class: 'shift sm', style: shiftVars(t) }, ic(shiftIconName(t), 12), t.name)));
+
+  /* ---- passo: anteprima ---- */
+  const stepPreview = () => {
+    const A = analyze(), issues = st.ex.issues, by = k => issues.filter(i => i.kind === k);
+    const people = [...S.people].sort((a, b) => personName(a).localeCompare(personName(b)));
+    const strip = h('div', { class: 'recog' }, ic('check', 14), h('span', null, 'Riconosciuto: ', h('strong', null, st.mp.mode === 'long' ? 'elenco' : 'griglia' + (st.mp.transposed ? ' ruotata' : '')), st.mp.mode === 'long' ? ` · Persona ${Imp.colName(st.mp.person)}, Data ${Imp.colName(st.mp.date)}${st.mp.shift !== undefined ? ', Fascia ' + Imp.colName(st.mp.shift) : ' (nessuna fascia: tutto il giorno)'}` : ` · nomi in colonna ${Imp.colName(st.mp.nameCol)}, ${(st.mp.dayCols || []).length} giorni · ${monthLabel(st.mp.ref.y + '-' + U.pad(st.mp.ref.m))}`, st.sheets.length > 1 ? ` · foglio «${sheet().name}»` : ''), h('button', { class: 'btn ghost sm', onclick: () => { st.step = 'map'; draw(); } }, 'Modifica'));
+    const sumb = h('div', { class: 'pv-sum' }, h('div', { class: 'pv-n' }, A.total), h('div', null, h('div', { class: 'strong' }, A.total === 1 ? 'indisponibilità trovata' : 'indisponibilità trovate'),
+      h('div', { class: 'row wrap gap-1' }, A.counts.new + A.counts.extend ? badge(`${A.counts.new + A.counts.extend} nuove`, 'info') : null, A.counts.dup ? badge(`${A.counts.dup} già presenti`) : null, A.counts.conflict ? badge(`${A.counts.conflict} in conflitto`, 'warn') : null)));
+    const warn = [];
+    const nrow = by('row').length + by('code').length, ndate = by('date').length;
+    if (nrow || ndate || A.unresolved.length) {
+      const list = (arr) => h('ul', { class: 'wlist' }, arr.slice(0, 8).map(i => h('li', null, i.msg)), arr.length > 8 ? h('li', { class: 'muted' }, `…e altre ${arr.length - 8}`) : null);
+      warn.push(h('div', { class: 'wbox' }, nrow ? h('details', null, h('summary', null, ic('alert', 14), `${nrow} ${nrow === 1 ? 'riga non riconosciuta' : 'righe non riconosciute'}`), list([...by('row'), ...by('code')])) : null,
+        ndate ? h('details', null, h('summary', null, ic('alert', 14), `${ndate} ${ndate === 1 ? 'data non valida' : 'date non valide'}`), list(by('date'))) : null,
+        h('div', { class: 'muted xs pad-t' }, 'Le righe con problemi non vengono importate.')));
+    }
+    // persone: associazione
+    const pn = [...A.info.values()].filter(i => i.res.status !== 'ok' || st.names[i.text] !== undefined);
+    const people_ui = pn.length ? h('section', { class: 'pv-sec' }, h('div', { class: 'pv-h' }, ic('alert', 15), `${A.unresolved.length ? A.unresolved.length + ' ' + (A.unresolved.length === 1 ? 'persona da associare' : 'persone da associare') : 'Associazione persone'}`), h('div', { class: 'muted xs pad-b' }, 'Nessuna persona viene creata senza la tua conferma. Se non scegli nulla, le sue righe vengono ignorate.'),
+      pn.map(i => { const cur = A.resolve(i.text); const opts = [{ value: '', label: i.res.status === 'ambiguous' ? '— scegli (più corrispondenze) —' : '⚠ Persona non trovata — scegli' }, { value: 'ignore', label: 'Ignora queste righe' }, { value: 'new', label: `➕ Crea nuova persona «${i.text}»` }].concat(people.map(p => ({ value: p.id, label: personName(p) + (p.role ? ' · ' + p.role : '') })));
+        return h('div', { class: 'pv-name' + (cur ? '' : ' need') }, h('div', { class: 'grow' }, h('div', { class: 'strong' }, '«' + i.text + '»'), h('div', { class: 'muted xs' }, i.n + (i.n === 1 ? ' giorno' : ' giorni'))), select(opts, cur, v => { if (v === '') delete st.names[i.text]; else st.names[i.text] = v; draw(); }, { 'aria-label': 'Associa «' + i.text + '»' })); })) : null;
+    // conflitti
+    const conflict = A.counts.conflict ? h('section', { class: 'pv-sec' }, h('div', { class: 'pv-h' }, ic('alert', 15), `${A.counts.conflict} ${A.counts.conflict === 1 ? 'giorno in conflitto' : 'giorni in conflitto'}`), h('div', { class: 'muted xs pad-b' }, 'Esiste già un\'indisponibilità diversa nello stesso giorno. Cosa fare?'),
+      seg([{ value: 'keep', label: 'Mantieni esistente' }, { value: 'excel', label: 'Usa Excel' }, { value: 'both', label: 'Aggiungi entrambe' }], st.conflictMode, v => { st.conflictMode = v; draw(); }, 'Gestione conflitti')) : null;
+    // tabella raggruppata per persona e compressa in intervalli
+    const byP = new Map(); A.items.forEach(it => { if (!byP.has(it.pid)) byP.set(it.pid, []); byP.get(it.pid).push(it); });
+    const statusBadge = (it) => it.status === 'new' ? badge('Nuova', 'info') : it.status === 'extend' ? badge('Estende', 'info') : it.status === 'dup' ? badge('Già presente') : badge('Conflitto', 'warn');
+    const groups = [...byP.entries()].map(([pid, arr]) => {
+      arr.sort((a, b) => a.date.localeCompare(b.date)); const rows = [];
+      for (const it of arr) { const k = maskLabel(it.mask) + '|' + it.status + '|' + (it.status === 'conflict' ? A.decision(it) : ''); const last = rows[rows.length - 1]; if (last && last.k === k && U.addDays(last.to, 1) === it.date) { last.to = it.date; last.items.push(it); } else rows.push({ k, from: it.date, to: it.date, items: [it], first: it }); }
+      return { pid, rows, arr };
+    });
+    const many = A.items.size > 60;
+    const table = h('section', { class: 'pv-sec' }, h('div', { class: 'pv-h' }, 'Anteprima'),
+      groups.length ? groups.map(g => { const isNew = g.pid.startsWith('new:'), p = isNew ? null : personById(g.pid), n = g.arr.filter(A.active).length;
+        return h('details', { class: 'pv-person', open: !many || g.arr.some(i => i.status === 'conflict') }, h('summary', null, isNew ? h('span', { class: 'avatar sm' }, '+') : avatar(p, 'sm'), h('span', { class: 'strong grow' }, isNew ? g.arr[0].text + ' (nuova)' : personName(p)), h('span', { class: 'muted sm' }, `${n} da importare`)),
+          g.rows.map(r => { const it = r.first, rowKeys = r.items.map(x => x.key), canSel = it.status !== 'dup', on = canSel && !st.skip.has(it.key);
+            return h('div', { class: 'pv-row' + (it.status === 'dup' ? ' dim' : '') }, h('label', { class: 'check', title: canSel ? 'Includi nell\'importazione' : 'Già presente' }, h('input', { type: 'checkbox', checked: on, disabled: !canSel, 'aria-label': 'Includi ' + U.fmtShort(r.from), onchange: e => { rowKeys.forEach(k => { if (e.target.checked) st.skip.delete(k); else st.skip.add(k); }); draw(); } }), h('span', { class: 'box', 'aria-hidden': 'true', html: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' })),
+              h('div', { class: 'pv-d tnum' }, r.from === r.to ? U.fmtShort(r.from) : `${U.fmtShort(r.from)} – ${U.fmtShort(r.to)}`, h('span', { class: 'muted xs' }, r.items.length > 1 ? ` (${r.items.length} giorni)` : '')),
+              h('div', { class: 'pv-m' }, maskChips(it.mask), it.status === 'conflict' ? h('div', { class: 'muted xs' }, 'esistente: ' + maskLabel(it.existing)) : null),
+              h('div', { class: 'pv-s' }, statusBadge(it), it.status === 'conflict' ? select([{ value: '', label: 'Come sopra' }, { value: 'keep', label: 'Mantieni esistente' }, { value: 'excel', label: 'Usa Excel' }, { value: 'both', label: 'Aggiungi entrambe' }], st.over[it.key] || '', v => { rowKeys.forEach(k => { if (v) st.over[k] = v; else delete st.over[k]; }); draw(); }, { 'aria-label': 'Risoluzione del conflitto', class: 'input select sm' }) : null)); })); })
+        : h('p', { class: 'hint' }, 'Nessuna indisponibilità da mostrare: associa le persone o correggi la mappatura.'));
+    const n = A.toApply.length;
+    return [strip, sumb, ...warn, people_ui, conflict, table, { footerCount: n, analysis: A }];
+  };
+
+  /* ---- applicazione ---- */
+  const apply = A => {
+    pushUndo('importazione indisponibilità');
+    const created = new Map();
+    for (const it of A.toApply) if (it.pid.startsWith('new:') && !created.has(it.pid)) {
+      const t = it.text.trim(), parts = t.split(/\s+/), person = { id: U.uid('p'), first: parts[0] || t, last: parts.slice(1).join(' '), display: t, role: '', services: [], night: false, active: true, notes: 'Creata dall\'importazione delle indisponibilità' };
+      S.people.push(person); created.set(it.pid, person.id);
+    }
+    let applied = 0; const groups = new Map();
+    for (const it of A.toApply) {
+      const pid = created.get(it.pid) || it.pid, mode = it.status === 'conflict' && A.decision(it) === 'excel' ? 'set' : 'add';
+      const gk = pid + '|' + mode + '|' + (it.mask.all ? '*' : [...it.mask.shifts].sort().join(',')); if (!groups.has(gk)) groups.set(gk, { pid, mode, mask: it.mask, dates: [] }); groups.get(gk).dates.push(it.date);
+    }
+    for (const g of groups.values()) applied += Unav.apply(S, g.pid, g.dates, { all: g.mask.all, shifts: [...g.mask.shifts] }, g.mode) ? g.dates.length : 0;
+    persist();
+    const skipped = A.counts.dup + A.items.size - A.toApply.length - A.counts.dup;
+    st.result = { applied: A.toApply.length, dup: A.counts.dup, skipped: Math.max(0, skipped), issues: st.ex.issues, unresolved: A.unresolved, created: created.size, first: [...A.toApply][0] && (created.get(A.toApply[0].pid) || A.toApply[0].pid) };
+    st.step = 'done'; render(); draw();
+    toast(`${st.result.applied} indisponibilità importate`, 'success', { label: 'Annulla', onClick: undoLast });
+  };
+
+  /* ---- passo: fine ---- */
+  const stepDone = () => {
+    const r = st.result, probs = r.issues.length + r.unresolved.length;
+    return [h('div', { class: 'done-h' }, h('span', { class: 'status-ic done-ic' }, ic('check', 22)), h('div', null, h('div', { class: 'strong', style: { fontSize: 'var(--fs-lg)' } }, `${r.applied} ${r.applied === 1 ? 'indisponibilità importata' : 'indisponibilità importate'}`), h('div', { class: 'muted sm' }, [r.dup ? `${r.dup} già presenti (ignorate)` : '', r.created ? `${r.created} nuove persone create` : ''].filter(Boolean).join(' · ') || 'Dati aggiornati.'))),
+      probs ? h('div', { class: 'wbox' }, h('div', { class: 'strong' }, ic('alert', 14), `${probs} ${probs === 1 ? 'elemento da verificare' : 'elementi da verificare'}`), h('ul', { class: 'wlist' }, r.unresolved.map(u => h('li', null, `«${u.text}» non associata: ${u.n} giorni ignorati`)), r.issues.slice(0, 10).map(i => h('li', null, i.msg)), r.issues.length > 10 ? h('li', { class: 'muted' }, `…e altre ${r.issues.length - 10}`) : null)) : null];
+  };
+
+  /* ---- disegno ---- */
+  function draw() {
+    let content, footer;
+    if (st.busy) { content = [h('div', { class: 'wiz-busy' }, h('span', { class: 'spin' }), st.busy)]; footer = null; }
+    else if (st.step === 'file') { content = stepFile(); footer = h('footer', { class: 'wiz-f' }, h('button', { class: 'btn', onclick: () => closeFn() }, 'Annulla')); }
+    else if (st.step === 'map') { const r = stepMap(), meta = r.pop(); content = r; footer = h('footer', { class: 'wiz-f' }, h('button', { class: 'btn', onclick: () => closeFn() }, 'Annulla'), h('button', { class: 'btn primary', disabled: !meta.valid, onclick: runExtract }, 'Continua')); }
+    else if (st.step === 'preview') { const r = stepPreview(), meta = r.pop(); content = r; footer = h('footer', { class: 'wiz-f' }, h('button', { class: 'btn ghost', onclick: () => { st.step = 'file'; draw(); } }, ic('chevL', 14), 'Altro file'), h('div', { class: 'spacer' }), h('button', { class: 'btn', onclick: () => closeFn() }, 'Annulla'), h('button', { class: 'btn primary', disabled: !meta.footerCount, onclick: () => apply(meta.analysis) }, `Conferma importazione${meta.footerCount ? ' (' + meta.footerCount + ')' : ''}`)); }
+    else { content = stepDone(); footer = h('footer', { class: 'wiz-f' }, h('div', { class: 'spacer' }), st.result.first ? h('button', { class: 'btn', onclick: () => { const f = st.result.first; closeFn(); openUnavFor(f); } }, ic('calendar', 14), 'Apri il calendario') : null, h('button', { class: 'btn primary', onclick: () => closeFn() }, 'Chiudi')); }
+    const keep = body.querySelector('.wiz-main'); const sc = keep ? keep.scrollTop : 0;
+    body.replaceChildren(h('div', { class: 'wiz-main' }, content), footer);
+    const nm = body.querySelector('.wiz-main'); if (nm && st.step === 'preview') nm.scrollTop = sc;
+  }
+  closeFn = openModal({ title: 'Importa indisponibilità', size: 'lg', cls: 'wizard', body, buttons: false });
+  draw();
+  if (initialFile) loadFile(initialFile);
+}
+
+/* =====================================================================
    SHELL: sidebar, topbar, navigazione mobile, render, esportazione PDF
    ===================================================================== */
-const NAV = [['planner', 'Turni', 'calendar'], ['stats', 'Statistiche', 'chart'], ['people', 'Personale', 'users'], ['services', 'Servizi', 'layers'], ['absences', 'Assenze', 'userx'], ['settings', 'Impostazioni', 'settings']];
+const NAV = [['planner', 'Turni', 'calendar'], ['stats', 'Statistiche', 'chart'], ['people', 'Personale', 'users'], ['services', 'Servizi', 'layers'], ['absences', 'Indisponibilità', 'userx'], ['settings', 'Impostazioni', 'settings']];
 const VIEWS = { planner: viewPlanner, stats: viewStats, people: viewPeople, services: viewServices, absences: viewAbsences, settings: viewSettings };
 function go(view) { S.ui.view = view; UIx.anim = true; persist(false); render(); window.scrollTo(0, 0); }
 
@@ -2099,7 +2939,7 @@ function sidebar(view) {
     h('div', { class: 'saved', title: 'I dati sono salvati automaticamente nel browser' }, h('i', null), h('span', null, 'Salvato in locale')));
 }
 function bottomNav(view) {
-  return h('nav', { class: 'bottomnav', 'aria-label': 'Navigazione' }, NAV.map(([k, l, i]) => h('button', { class: view === k ? 'on' : '', 'aria-current': view === k ? 'page' : null, onclick: () => go(k) }, ic(i, 22), h('span', null, l === 'Statistiche' ? 'Stats' : l === 'Impostazioni' ? 'Altro' : l))));
+  return h('nav', { class: 'bottomnav', 'aria-label': 'Navigazione' }, NAV.map(([k, l, i]) => h('button', { class: view === k ? 'on' : '', 'aria-current': view === k ? 'page' : null, onclick: () => go(k) }, ic(i, 22), h('span', null, l === 'Statistiche' ? 'Stats' : l === 'Impostazioni' ? 'Altro' : l === 'Indisponibilità' ? 'Indisp.' : l))));
 }
 function topbar(page) {
   const P = S.people.length ? periodData() : null;
