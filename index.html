@@ -302,7 +302,8 @@ table.mg{border-collapse:separate;border-spacing:0;width:100%;table-layout:auto}
 /* settimana */
 .mg.wk th.name{--name-col:210px}
 .mg.wk tr.grp th,.mg.wk tr.grp td{background-color:var(--surface-2);height:34px}
-.mg.wk .gnm{height:34px;gap:var(--sp-2)} .gname{font-weight:var(--fw-bold);font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.05em;color:var(--text-2)}
+.mg.wk .gnm{height:34px;gap:var(--sp-2)} .sdot{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none}
+.gname{font-weight:var(--fw-bold);font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.05em;color:var(--text-2)}
 .mg.wk .nm{height:auto;min-height:var(--row-h);padding-top:var(--sp-2);padding-bottom:var(--sp-2)} .nm.stackv{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px}
 .mg.wk td.wc{vertical-align:top;height:auto;min-width:112px}
 .wcb{position:relative;display:flex;flex-direction:column;gap:3px;width:100%;min-height:var(--row-h);padding:5px 6px;border:0;background:transparent;text-align:left;border-radius:0;align-items:stretch;justify-content:center}
@@ -455,6 +456,7 @@ const DOW_SHORT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const DOW_LONG = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 const TIER_NAMES = ['Equità del carico', 'Equità delle notti', 'Equità dei weekend', 'Continuità di servizio', 'Preferenze secondarie'];
 const STORAGE_KEY = 'turni.app.v1';
+const SVC_COLORS = ['#3d8bd9', '#4d9a4a', '#d9617a', '#b8693d', '#8a6fd6', '#2f9e9a', '#c9a227', '#8a8f99'];
 
 /* ---------------------------------------------------------------- utils */
 const U = {
@@ -524,9 +526,9 @@ function defaultState() {
       { id: 'not', name: 'Notte', start: '22:00', end: '06:00', night: true, points: 2, color: '#6b6bd6' },
     ],
     services: [
-      { id: 'svc_salaA', name: 'Sala A', active: true, continuity: false, req: { mat: mkReq([2, 2, 2, 2, 2, 1, 1]), pom: mkReq([1, 1, 1, 1, 1, 1, 1]), not: mkReq([0, 0, 0, 0, 0, 0, 0]) } },
-      { id: 'svc_salaB', name: 'Sala B', active: true, continuity: false, req: { mat: mkReq([1, 1, 1, 1, 1, 0, 0]), pom: mkReq([1, 1, 1, 1, 1, 0, 0]), not: mkReq([0, 0, 0, 0, 0, 0, 0]) } },
-      { id: 'svc_uti', name: 'UTI', active: true, continuity: true, req: { mat: mkReq([1, 1, 1, 1, 1, 1, 1]), pom: mkReq([1, 1, 1, 1, 1, 1, 1]), not: mkReq([1, 1, 1, 1, 1, 1, 1]) } },
+      { id: 'svc_salaA', name: 'Sala A', color: SVC_COLORS[0], active: true, continuity: false, req: { mat: mkReq([2, 2, 2, 2, 2, 1, 1]), pom: mkReq([1, 1, 1, 1, 1, 1, 1]), not: mkReq([0, 0, 0, 0, 0, 0, 0]) } },
+      { id: 'svc_salaB', name: 'Sala B', color: SVC_COLORS[1], active: true, continuity: false, req: { mat: mkReq([1, 1, 1, 1, 1, 0, 0]), pom: mkReq([1, 1, 1, 1, 1, 0, 0]), not: mkReq([0, 0, 0, 0, 0, 0, 0]) } },
+      { id: 'svc_uti', name: 'UTI', color: SVC_COLORS[2], active: true, continuity: true, req: { mat: mkReq([1, 1, 1, 1, 1, 1, 1]), pom: mkReq([1, 1, 1, 1, 1, 1, 1]), not: mkReq([1, 1, 1, 1, 1, 1, 1]) } },
     ],
     people: [],
     unavail: [],
@@ -556,7 +558,8 @@ function normalizeState(raw) {
   S.shiftTypes = Array.isArray(S.shiftTypes) ? S.shiftTypes : D.shiftTypes;
   const OLD_COLORS = { mat: ['#fde68a', '#e8a33d'], pom: ['#bfdbfe', '#2f9e9a'], not: ['#c7d2fe', '#6b6bd6'] };
   S.shiftTypes.forEach(t => { t.points = +t.points || 0; t.night = !!t.night; t.color = t.color || '#9aa4b2'; const o = OLD_COLORS[t.id]; if (o && String(t.color).toLowerCase() === o[0]) t.color = o[1]; });
-  S.services = (Array.isArray(S.services) ? S.services : []).map(sv => {
+  S.services = (Array.isArray(S.services) ? S.services : []).map((sv, si) => {
+    if (!/^#[0-9a-f]{6}$/i.test(sv.color || '')) sv.color = SVC_COLORS[si % SVC_COLORS.length];
     sv.req = sv.req || {};
     S.shiftTypes.forEach(t => { const r = Array.isArray(sv.req[t.id]) ? sv.req[t.id] : []; sv.req[t.id] = Array.from({ length: 7 }, (_, i) => Math.max(0, parseInt(r[i], 10) || 0)); });
     sv.active = sv.active !== false; sv.continuity = !!sv.continuity; return sv;
@@ -581,9 +584,9 @@ function weekServices(S, ws) {
     const o = (w && w.overrides && w.overrides[sv.id]) || null;
     const active = o && typeof o.active === 'boolean' ? o.active : sv.active;
     if (!active) continue;
-    out.push({ id: sv.id, name: sv.name, cont: !!sv.continuity, req: (o && o.req) || sv.req, staffIds: null, temp: false, custom: !!(o && o.req) });
+    out.push({ id: sv.id, name: sv.name, color: sv.color, cont: !!sv.continuity, req: (o && o.req) || sv.req, staffIds: null, temp: false, custom: !!(o && o.req) });
   }
-  for (const x of (w && w.extra) || []) out.push({ id: x.id, name: x.name, cont: !!x.continuity, req: x.req || {}, staffIds: x.staff || null, temp: true, custom: false });
+  for (const x of (w && w.extra) || []) out.push({ id: x.id, name: x.name, color: x.color || '#8a8f99', cont: !!x.continuity, req: x.req || {}, staffIds: x.staff || null, temp: true, custom: false });
   return out;
 }
 function demandCells(S, ws) {
@@ -1580,7 +1583,7 @@ function serviceGrid(P) {
   const days = P.days, today = U.today(), f = F(), wide = days.length > 7;
   const svcs = new Map(), cellMaps = {};
   P.weeks.forEach(ws => { cellMaps[ws] = new Map(demandCells(S, ws).map(c => [c.key, c]));
-    weekServices(S, ws).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { id: sv.id, name: sv.name, cont: sv.cont, temp: sv.temp, custom: sv.custom, rows: new Set() }); const e = svcs.get(sv.id); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) e.rows.add(t.id); }); }); });
+    weekServices(S, ws).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { id: sv.id, name: sv.name, color: sv.color, cont: sv.cont, temp: sv.temp, custom: sv.custom, rows: new Set() }); const e = svcs.get(sv.id); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) e.rows.add(t.id); }); }); });
   const uncMap = {}; P.uncovered.forEach(u => { uncMap[u.key] = u; });
   const unDay = days.map(d => S.people.filter(p => p.active !== false && S.unavail.some(e => e.person === p.id && d >= e.from && d <= e.to)));
   const head = h('tr', null, nameCell('col', '', 'Servizio e turno'), days.map((d, i) => { const dow = U.dow(d), hol = holidayName(d), un = unDay[i];
@@ -1591,7 +1594,7 @@ function serviceGrid(P) {
     if (!passSvc(sv.id)) continue;
     const shRows = S.shiftTypes.filter(t => passShift(t.id) && sv.rows.has(t.id));
     if (!shRows.length) continue;
-    body.push(h('tr', { class: 'grp' }, h('th', { class: 'name gh', scope: 'rowgroup' }, h('div', { class: 'nm gnm' }, h('span', { class: 'gname' }, sv.name), sv.temp ? badge('Temporaneo', 'info') : sv.custom ? badge('Personalizzato', 'info') : null, sv.cont ? badge('Continuità', '') : null)), h('td', { class: 'gfill', colSpan: days.length })));
+    body.push(h('tr', { class: 'grp' }, h('th', { class: 'name gh', scope: 'rowgroup' }, h('div', { class: 'nm gnm' }, h('i', { class: 'sdot', style: `background:${sv.color}` }), h('span', { class: 'gname' }, sv.name), sv.temp ? badge('Temporaneo', 'info') : sv.custom ? badge('Personalizzato', 'info') : null, sv.cont ? badge('Continuità', '') : null)), h('td', { class: 'gfill', colSpan: days.length })));
     for (const t of shRows) {
       const tr = h('tr', null, nameCell('row', 'stackv', shiftBadge(t), h('span', { class: 'muted xs tnum' }, t.start + '–' + t.end)));
       days.forEach(d => {
@@ -1765,7 +1768,7 @@ function openWeekConfig(ws) {
       extra.map((x, i) => { matrices['x' + x.id] = matrices['x' + x.id] || reqMatrix(x.req);
         return h('div', { class: 'card flat' }, h('div', { class: 'row between wrap' }, input('text', x.name, v => { x.name = v; }, { placeholder: 'Nome del servizio', 'aria-label': 'Nome servizio temporaneo' }), h('div', { class: 'row gap-2' }, switchEl(x.continuity, v => { x.continuity = v; }, 'Continuità'), h('button', { class: 'btn icon ghost danger', 'aria-label': 'Rimuovi servizio temporaneo', onclick: () => { extra.splice(i, 1); draw(); } }, ic('trash', 16)))),
           h('div', { class: 'pop-t' }, 'Personale abilitato'), h('div', { class: 'chips' }, S.people.map(p => { const on = (x.staff || []).includes(p.id); return h('button', { class: 'fchip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: () => { x.staff = x.staff || []; if (on) x.staff = x.staff.filter(z => z !== p.id); else x.staff.push(p.id); draw(); } }, personName(p)); })), matrices['x' + x.id].el); }),
-      h('button', { class: 'btn', onclick: () => { extra.push({ id: U.uid('x'), name: 'Nuovo servizio', continuity: false, staff: S.people.map(p => p.id), req: {} }); draw(); } }, ic('plus', 15), 'Aggiungi servizio temporaneo'),
+      h('button', { class: 'btn', onclick: () => { extra.push({ id: U.uid('x'), name: 'Nuovo servizio', color: SVC_COLORS[(S.services.length + extra.length) % SVC_COLORS.length], continuity: false, staff: S.people.map(p => p.id), req: {} }); draw(); } }, ic('plus', 15), 'Aggiungi servizio temporaneo'),
       h('div', { class: 'pop-t' }, 'Note della settimana (compaiono nel PDF)'), h('textarea', { class: 'input', rows: 3, 'aria-label': 'Note della settimana', oninput: e => { notes = e.target.value; } }, notes)));
   };
   draw();
@@ -1919,7 +1922,7 @@ function viewServices() {
   let content;
   if (svcTab === 'services') {
     content = S.services.length ? S.services.map(sv => h('section', { class: 'card svc' + (sv.active ? '' : ' inactive') },
-      h('div', { class: 'row between wrap' }, h('div', { class: 'row gap-2' }, h('h3', null, sv.name), sv.continuity ? badge('Continuità del personale', 'info') : null), h('div', { class: 'row gap-2' }, switchEl(sv.active, v => { sv.active = v; persist(); render(); toast(v ? 'Servizio attivato' : 'Servizio disattivato'); }, sv.active ? 'Attivo' : 'Disattivo', { 'aria-label': 'Servizio ' + sv.name + ' attivo' }),
+      h('div', { class: 'row between wrap' }, h('div', { class: 'row gap-2' }, h('i', { class: 'sdot', style: `background:${sv.color}` }), h('h3', null, sv.name), sv.continuity ? badge('Continuità del personale', 'info') : null), h('div', { class: 'row gap-2' }, switchEl(sv.active, v => { sv.active = v; persist(); render(); toast(v ? 'Servizio attivato' : 'Servizio disattivato'); }, sv.active ? 'Attivo' : 'Disattivo', { 'aria-label': 'Servizio ' + sv.name + ' attivo' }),
         h('button', { class: 'btn icon ghost', 'aria-label': 'Azioni per ' + sv.name, 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, [{ icon: 'edit', label: 'Modifica', onClick: () => editService(sv) }, '-', { icon: 'trash', label: 'Elimina…', danger: true, onClick: () => deleteService(sv) }]) }, ic('more', 18)))),
       h('div', { class: 'scroll-x' }, h('table', { class: 'matrix ro' }, h('thead', null, h('tr', null, h('th', null), DOW_SHORT.map((d, i) => h('th', { scope: 'col', class: i >= 5 ? 'we' : '' }, d)))), h('tbody', null, S.shiftTypes.map(t => h('tr', null, h('th', { scope: 'row' }, shiftBadge(t, { sm: true })), (sv.req[t.id] || []).map((n, i) => h('td', { class: i >= 5 ? 'we' : '' }, n ? h('strong', null, n) : h('span', { class: 'muted' }, '·')))))))))) : [h('div', { class: 'card' }, emptyState('layers', 'Nessun servizio', 'Definisci i servizi da coprire e le persone richieste per giorno e turno.', [h('button', { class: 'btn primary', onclick: () => editService() }, ic('plus', 15), 'Nuovo servizio')]))];
   } else {
@@ -1933,9 +1936,10 @@ function viewServices() {
   return { title: 'Servizi', sub: svcTab === 'services' ? 'Configurazione generale' : 'Tipologie di turno', actions, body };
 }
 function editService(sv) {
-  const isNew = !sv; const d = sv ? U.deepCopy(sv) : { id: U.uid('svc'), name: '', active: true, continuity: false, req: {} };
+  const isNew = !sv; const d = sv ? U.deepCopy(sv) : { id: U.uid('svc'), name: '', color: SVC_COLORS[S.services.length % SVC_COLORS.length], active: true, continuity: false, req: {} };
   const m = reqMatrix(d.req);
   openModal({ title: isNew ? 'Nuovo servizio' : 'Modifica servizio', size: 'lg', body: h('div', { class: 'form' }, field('Nome del servizio', input('text', d.name, v => { d.name = v; }, { autofocus: true, placeholder: 'Es. Sala operatoria' })),
+    h('div', { class: 'field' }, h('label', null, 'Colore'), (() => { const sw = h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': 'Colore del servizio' }); const draw = () => sw.replaceChildren(...SVC_COLORS.map(c => h('button', { type: 'button', class: 'swatch' + (d.color === c ? ' on' : ''), style: shiftVars({ color: c }), role: 'radio', 'aria-checked': d.color === c ? 'true' : 'false', 'aria-label': 'Colore ' + c, onclick: () => { d.color = c; draw(); } }, ic('check', 12)))); draw(); return sw; })(), h('div', { class: 'hint' }, 'Usato per riconoscere il servizio nelle griglie e nei PDF')),
     h('div', { class: 'setting' }, h('div', null, h('div', { class: 'strong' }, 'Attivo'), h('div', { class: 'hint' }, 'I servizi disattivati non vengono coperti')), switchEl(d.active, v => { d.active = v; }, null, { 'aria-label': 'Servizio attivo' })),
     h('div', { class: 'setting' }, h('div', null, h('div', { class: 'strong' }, 'Continuità del personale'), h('div', { class: 'hint' }, 'Cerca di tenere la stessa persona su giorni consecutivi (es. UTI)')), switchEl(d.continuity, v => { d.continuity = v; }, null, { 'aria-label': 'Continuità del personale' })),
     h('div', { class: 'pop-t' }, 'Persone richieste per giorno e turno'), m.el),
@@ -2150,7 +2154,7 @@ function pdfContext(kind) {
 /* tabella PER SERVIZIO: righe = servizio+turno, colonne = giorni, celle = persone assegnate */
 function serviceTableData(ctx, days) {
   const cellMaps = {}, svcs = new Map(), head = ['Servizio', 'Turno', ...days.map(d => `${DOW_SHORT[U.dow(d)]}\n${U.fmtShort(d)}`)];
-  ctx.weeks.forEach(ws => { cellMaps[ws] = new Map(demandCells(S, ws).map(c => [c.key, c])); weekServices(S, ws).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { name: sv.name + (sv.temp ? ' (temp.)' : ''), rows: new Set() }); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) svcs.get(sv.id).rows.add(t.id); }); }); });
+  ctx.weeks.forEach(ws => { cellMaps[ws] = new Map(demandCells(S, ws).map(c => [c.key, c])); weekServices(S, ws).forEach(sv => { if (!svcs.has(sv.id)) svcs.set(sv.id, { name: sv.name + (sv.temp ? ' (temp.)' : ''), color: sv.color, rows: new Set() }); S.shiftTypes.forEach(t => { if ((sv.req[t.id] || []).some(n => n > 0)) svcs.get(sv.id).rows.add(t.id); }); }); });
   const rows = [], meta = [];
   for (const [id, sv] of svcs) for (const t of S.shiftTypes) {
     if (!sv.rows.has(t.id)) continue;
@@ -2163,7 +2167,7 @@ function serviceTableData(ctx, days) {
       for (let k = ass.length; k < c.req; k++) lines.push('** SCOPERTO **');
       row.push(lines.join('\n')); m.push(ass.length < c.req ? 'unc' : 'ok');
     });
-    rows.push(row); meta.push({ shiftIdx: S.shiftTypes.indexOf(t), night: !!t.night, cells: m });
+    rows.push(row); meta.push({ shiftIdx: S.shiftTypes.indexOf(t), night: !!t.night, color: sv.color, cells: m });
   }
   return { head, rows, meta };
 }
@@ -2179,6 +2183,7 @@ function peopleTableData(ctx) {
   people.forEach(p => { const un = {}; S.unavail.filter(e => e.person === p.id).forEach(e => days.forEach(d => { if (d >= e.from && d <= e.to && (!e.shifts || !e.shifts.length)) un[d] = true; })); rows.push([personName(p), ...days.map(d => (by[p.id] && by[p.id][d] ? by[p.id][d].join('\n') : un[d] ? 'x' : ''))]); });
   return { head, rows, rich };
 }
+const tint = (hex, k) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(255 - (255 - v) * k)); };
 const pdfFx = t => String(t).replace(/→/g, '->').replace(/≤/g, '<=').replace(/✔|✖|▲/g, '');
 function exportPDF(kind, group) {
   group = group || S.ui.group || 'people';
@@ -2205,11 +2210,11 @@ function exportPDF(kind, group) {
         doc.autoTable({ startY: y, head: [T.head], body: T.rows, theme: 'grid', margin: { left: 14, right: 14 }, styles: Object.assign({ fontSize: month2 ? 6.8 : 8, cellPadding: month2 ? 1.2 : 1.6, valign: 'middle', overflow: 'linebreak' }, grid), headStyles: Object.assign({ halign: 'center', fontSize: month2 ? 7 : 8 }, dark),
           columnStyles: { 0: { fontStyle: 'bold', cellWidth: month2 ? 22 : 26 }, 1: { cellWidth: month2 ? 22 : 26 } },
           didParseCell: d => { if (d.section === 'head' && d.column.index >= 2) { const dt = ctx.days.find(x => `${DOW_SHORT[U.dow(x)]}\n${U.fmtShort(x)}` === T.head[d.column.index]); if (dt && (U.dow(dt) >= 5 || holidayName(dt))) d.cell.styles.fillColor = [90, 90, 90]; }
-            if (d.section !== 'body') return; const m = T.meta[d.row.index]; if (d.column.index === 1) { d.cell.styles.fillColor = m.night ? [190, 190, 190] : fills[Math.min(2, m.shiftIdx)]; d.cell.styles.fontStyle = 'bold'; }
+            if (d.section !== 'body') return; const m = T.meta[d.row.index]; if (d.column.index === 0) { d.cell.styles.fillColor = tint(m.color, 0.42); d.cell.styles.fontStyle = 'bold'; } if (d.column.index >= 2 && m.cells[d.column.index - 2] === 'ok') d.cell.styles.fillColor = tint(m.color, 0.1); if (d.column.index === 1) { d.cell.styles.fillColor = m.night ? [190, 190, 190] : fills[Math.min(2, m.shiftIdx)]; d.cell.styles.fontStyle = 'bold'; }
             if (d.column.index >= 2) { const k = m.cells[d.column.index - 2]; if (k === 'off') d.cell.styles.fillColor = [235, 235, 235]; else if (k === 'unc') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.lineWidth = 0.7; } } } });
         y = doc.lastAutoTable.finalY + 5;
       });
-      doc.setFontSize(8); doc.text('Legenda: (B) = assegnazione bloccata · (!) = conflitto con un vincolo obbligatorio · ** SCOPERTO ** = posto non coperto · – = turno non richiesto' + (month ? ' · colonne scure = weekend/festività' : ''), 14, Math.min(y, H - 14)); y += 6;
+      doc.setFontSize(8); doc.text('Legenda: colore della prima colonna = servizio · (B) = assegnazione bloccata · (!) = conflitto con un vincolo obbligatorio · ** SCOPERTO ** = posto non coperto · – = turno non richiesto' + (month ? ' · colonne scure = weekend/festività' : ''), 14, Math.min(y, H - 14)); y += 6;
     } else {
       const T = prepared.people, n = ctx.days.length, rich = T.rich, nameW = rich ? 34 : 36, dayW = (W - 28 - nameW) / n, codes = shiftCodes(S);
       doc.autoTable({ startY: y, head: [T.head], body: T.rows, theme: 'grid', margin: { left: 14, right: 14 }, styles: Object.assign({ fontSize: rich ? 8 : 6.5, cellPadding: rich ? 1.8 : 0.9, halign: 'center', valign: 'middle', overflow: 'linebreak' }, grid), headStyles: Object.assign({ halign: 'center', fontSize: rich ? 8 : 6.5 }, dark),
